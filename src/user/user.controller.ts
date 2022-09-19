@@ -154,13 +154,12 @@ export class UserController {
 
   @ApiOkResponse({ description: 'Password Changed!', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
-  @Patch('/reset-password/:token')
+  @Patch('/reset-password/')
   async resetPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
-    @Param('token', ParseUUIDPipe) token: string,
   ) {
     return await this.userService.resetPassword(
-      token,
+      resetPasswordDto.code,
       resetPasswordDto.newPassword,
     );
   }

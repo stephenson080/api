@@ -107,6 +107,11 @@ export class ResetPasswordDto {
     @IsString()
     @IsNotEmpty()
     newPassword: string
+
+    @ApiProperty({type: String})
+    @IsString()
+    @IsNotEmpty()
+    code: string
 }
 
 export class VerifyUserDto {

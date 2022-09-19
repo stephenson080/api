@@ -37,7 +37,7 @@ import { Wallet } from './wallet.entity';
     @Column({ type: 'boolean', default: false })
     isVerified: boolean;
 
-    @Column({type: 'uuid', nullable: true})
+    @Column({ nullable: true})
     token: string
 
     @Column({ type: 'timestamp without time zone', default: new Date() })
