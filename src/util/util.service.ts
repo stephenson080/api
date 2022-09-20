@@ -116,9 +116,10 @@ export class UtilService {
           message: 'Upload must be an image',
         });
       }
-      if (file.size > 100000)
+      if (file.size > 2000000)
         throw new BadRequestException({
-          message: 'Image must not be greater tham 100kb',
+          // to remember to change value of upload
+          message: 'Image must not be greater tham 2MB',
         });
       const fileArray = file.originalname
         .replace(' ', '')
