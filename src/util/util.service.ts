@@ -9,8 +9,7 @@ import {
 import { v4 as uuid } from 'uuid';
 import { createWriteStream, unlinkSync } from 'fs';
 import { join } from 'path';
-import { Express } from 'express';
-import { MessageResponseDto } from 'src/utils/types';
+
 
 type uploadfile = { path: string; type: string }
 
@@ -41,7 +40,7 @@ export class UtilService {
   ) {
     this.transporter.sendMail(
       {
-        from: 'luminous@support.com',
+        from: 'blockplot@support.com',
         to: email,
         subject: subject,
         text: !html ? message : undefined,
@@ -116,10 +115,10 @@ export class UtilService {
           message: 'Upload must be an image',
         });
       }
-      if (file.size > 2000000)
+      if (file.size > 6000000)
         throw new BadRequestException({
           // to remember to change value of upload
-          message: 'Image must not be greater tham 2MB',
+          message: 'Image must not be greater tham 6MB',
         });
       const fileArray = file.originalname
         .replace(' ', '')
