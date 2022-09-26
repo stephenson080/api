@@ -80,7 +80,7 @@ export class UserController {
   async getProfile(@Request() req) {
     const user = await this.userService.getUserById(req.user.userId, true, true);
     const walletAddress = user.wallet ? user.wallet.walletAddress : ''
-    delete user.wallet
+    if (user.wallet)  delete user.wallet
     return new UserResponseDto(user, walletAddress)
   }
 
@@ -199,7 +199,13 @@ export class UserController {
         message: 'you are not authorised to use this service',
       });
     const users = await this.userService.getAllUsers(isActive, isVerified);
-    return users.map((u) => new UserResponseDto(u, ''));
+    return users.map((u) => {
+      const walletAddress = u.wallet ? u.wallet.walletAddress : ''
+      if (u.wallet) delete u.wallet
+      return {
+        ...new UserResponseDto(u, walletAddress)
+      }
+    });
   }
 
   @ApiBearerAuth()

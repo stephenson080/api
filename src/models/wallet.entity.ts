@@ -14,11 +14,20 @@ export class Wallet{
     @Column({type: 'character varying'})
     walletAddress: string
 
+    @Column({type: 'character varying', nullable: true})
+    salt: string
+
     @Column({
         nullable: true,
         type: 'character varying'
     })
-    encryption: string
+    passwordEncryptedWallet: string
+
+    @Column({
+        nullable: true,
+        type: 'character varying'
+    })
+    staticEncryptedWallet: string
 
     @Column({ type: 'enum', default: Network.POLYGON, enum: Network })
     network: Network

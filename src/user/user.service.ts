@@ -7,7 +7,7 @@ import { v4 as uuid } from 'uuid';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/models/user.entity';
-import { hash } from 'bcrypt';
+import { hash, compareSync } from 'bcrypt';
 import { CreateUserDto, ForgotpasswordDto, UserKYCDto } from './userDto';
 import { PersonService } from 'src/person/person.service';
 // import { Person } from 'src/models/person.entity';
@@ -77,11 +77,13 @@ export class UserService {
       throw new UnauthorizedException({ message: 'Something went wrong' });
     if (user.wallet)
       throw new BadRequestException({ message: 'you already have a wallet' });
+    const isMatch = compareSync(passcode, user.password)
+    if (!isMatch) throw new BadRequestException({message: 'Sorry your password is incorrect'})
     const wallet = await this.walletService.createWallet(passcode);
     await this.userRepo.save({ ...user, wallet });
     return new MessageResponseDto(
       'Success',
-      `Wallet created successfully! here is your wallet address ${wallet.walletAddress}`,
+      `Wallet created! here is your wallet address ${wallet.walletAddress}`,
     );
   }
 
@@ -203,13 +205,18 @@ export class UserService {
 
   async resetPassword(token: string, newPassword: string) {
     try {
-      const user = await this.userRepo.findOneBy({ token });
+      let resetWallet : any 
+      const user = await this.userRepo.findOne({where: {token}, relations: {wallet: true}})
       if (!user)
         throw new BadRequestException({
           message: 'This email Link has been used or it is invalid',
         });
       const passordHash = await this.hashPassword(newPassword);
-      await this.editUser(user.userId, { password: passordHash, token: null });
+      if (user.wallet){
+        resetWallet = await this.walletService.resetUserWallet(user.wallet.walletId, user.wallet.salt, user.wallet.staticEncryptedWallet, newPassword)
+      }
+      
+      await this.editUser(user.userId, { password: passordHash, token: null, wallet: resetWallet });
       return new MessageResponseDto(
         'Success',
         'Your Password has been changed',
@@ -227,7 +234,7 @@ export class UserService {
 
   async getAllUsers(isActive?: boolean, isVerified?: boolean) {
     return await this.userRepo.find({
-      where: [{ isActive, isVerified }, { isActive }, { isVerified }, {}],
+      where: [{ isActive, isVerified }, { isActive }, { isVerified }, {}], relations: {person: true, wallet: true}
     });
   }
 
