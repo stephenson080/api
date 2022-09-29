@@ -1,6 +1,11 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  UnprocessableEntityException,
+} from '@nestjs/common';
 import { createTransport, Transporter } from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
+import { Axios } from 'axios';
 import {
   v2 as cloudinary,
   UploadApiResponse,
@@ -10,12 +15,15 @@ import { v4 as uuid } from 'uuid';
 import { createWriteStream, unlinkSync } from 'fs';
 import { join } from 'path';
 
+import {OrderInitiateDto} from '../order/orderDto'
+import { OrderCurrency,MessageResponseDto } from 'src/utils/types';
 
-type uploadfile = { path: string; type: string }
+type uploadfile = { path: string; type: string };
 
 @Injectable()
 export class UtilService {
   transporter: Transporter;
+  paystackHTTP: Axios;
   constructor(private readonly configService: ConfigService) {
     this.transporter = createTransport({
       service: 'gmail',
@@ -28,6 +36,13 @@ export class UtilService {
       cloud_name: this.configService.get('CLOUDINARY_NAME'),
       api_key: this.configService.get('API_KEY'),
       api_secret: this.configService.get('API_SECRET'),
+    });
+
+    this.paystackHTTP = new Axios({
+      headers: {
+        
+        Authorization: `Bearer ${this.configService.get('PAYSTACK_KEY')}`,
+      },
     });
   }
   sendMail(
@@ -103,48 +118,51 @@ export class UtilService {
       },
     );
   }
-  
-  async uploadPropertyImage(file: Express.Multer.File){
-    return new Promise((res: ({path, type}: uploadfile) => void, rej: (err: any) => void) => {
-      if (
-        file.mimetype !== 'image/png' &&
-        file.mimetype !== 'image/jpeg' &&
-        file.mimetype !== 'image/jpg'
-      ) {
-        throw new BadRequestException({
-          message: 'Upload must be an image',
+
+  async uploadPropertyImage(file: Express.Multer.File) {
+    return new Promise(
+      (res: ({ path, type }: uploadfile) => void, rej: (err: any) => void) => {
+        if (
+          file.mimetype !== 'image/png' &&
+          file.mimetype !== 'image/jpeg' &&
+          file.mimetype !== 'image/jpg'
+        ) {
+          throw new BadRequestException({
+            message: 'Upload must be an image',
+          });
+        }
+        if (file.size > 6000000)
+          throw new BadRequestException({
+            // to remember to change value of upload
+            message: 'Image must not be greater tham 6MB',
+          });
+        const fileArray = file.originalname
+          .replace(' ', '')
+          .toLowerCase()
+          .split('.');
+        const filePath = `${fileArray[0]}-${uuid().toString()}.${fileArray[1]}`;
+        const ws = createWriteStream(join('upload', `${filePath}`));
+        ws.write(file.buffer, (err) => {
+          if (err) rej(err);
+          res({
+            path: ws.path.toString(),
+            type: ws.path.toString().split('.').pop(),
+          });
         });
-      }
-      if (file.size > 6000000)
-        throw new BadRequestException({
-          // to remember to change value of upload
-          message: 'Image must not be greater tham 6MB',
-        });
-      const fileArray = file.originalname
-        .replace(' ', '')
-        .toLowerCase()
-        .split('.');
-      const filePath = `${fileArray[0]}-${uuid().toString()}.${
-        fileArray[1]
-      }`;
-      const ws = createWriteStream(join('upload', `${filePath}`));
-      ws.write(file.buffer, (err) => {
-        if (err) rej(err)
-        res({path: ws.path.toString(), type: ws.path.toString().split('.').pop()})
-      });
-    })
+      },
+    );
   }
 
   async uploadPropertyImages(files: Express.Multer.File[]) {
     const filesUploadedUrl: uploadfile[] = [];
     try {
       for (let file of files) {
-        const upload = await this.uploadPropertyImage(file)
-        filesUploadedUrl.push(upload)
+        const upload = await this.uploadPropertyImage(file);
+        filesUploadedUrl.push(upload);
       }
-      return filesUploadedUrl
+      return filesUploadedUrl;
     } catch (error) {
-      throw error
+      throw error;
     }
 
     // const message = await this.userService.userKyc(req.user.userId, userKyc, ws.path.toString())
@@ -221,5 +239,31 @@ export class UtilService {
 
   async deleteFileFromCloudinary(publicId: string) {
     await cloudinary.uploader.destroy(publicId);
+  }
+
+  async initiatePaystackPayment(email: string, amount: string, currency: OrderCurrency) : Promise<OrderInitiateDto> {
+    try {
+      const res = await this.paystackHTTP.post(
+        `https://api.paystack.co/transaction/initialize`,
+        JSON.stringify({email, amount, currency}),
+      );
+      
+      return JSON.parse(res.data)
+    } catch (error) {
+      throw new UnprocessableEntityException({ message: error.message });
+    }
+  }
+
+  async verifyPaystackPayment(reference: string){
+    try {
+      const res = await this.paystackHTTP.get(`https://api.paystack.co/transaction/verify/${reference}`)
+      const data = JSON.parse(res.data)
+      if (data.status === 'success'){
+        return new MessageResponseDto('Success', 'Payment Successful')
+      }
+      return new MessageResponseDto('Success', res.data.data.status)
+    } catch (error) {
+      throw new UnprocessableEntityException({message: error.message})
+    }
   }
 }

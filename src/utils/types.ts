@@ -28,6 +28,15 @@ export enum PropertyType {
 export enum Network {
     POLYGON='POLYGON', ETHEREUM='ETHEREUM'
 }
+
+export enum OrderType {
+    BUY_CRYPTO='BUY_CRYPTO', SELL_CRYPTO='SELL_CRYPTO'
+}
+
+export enum OrderCurrency {
+    NAIRA='NGN', CEDIS='GHC', DOLLARS='USD'
+}
+
 export class MessageResponseDto {
     @ApiProperty({type: String, enum: ['Success', 'Error' ]})
     type: string

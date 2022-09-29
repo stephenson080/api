@@ -8,17 +8,19 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/models/user.entity';
 import { hash, compareSync } from 'bcrypt';
-import { CreateUserDto, ForgotpasswordDto, UserKYCDto } from './userDto';
+import { AddBankDto, CreateUserDto, ForgotpasswordDto, UserKYCDto } from './userDto';
 import { PersonService } from 'src/person/person.service';
 // import { Person } from 'src/models/person.entity';
 import { MessageResponseDto } from 'src/utils/types';
 import { UtilService } from 'src/util/util.service';
 import { Walletservice } from './wallet.service';
+import { Bank } from 'src/models/bank.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Bank) private readonly bankRepo: Repository<Bank>,
     private readonly personService: PersonService,
     private readonly walletService: Walletservice,
     private readonly utilService: UtilService,
@@ -27,7 +29,7 @@ export class UserService {
   async getUserById(userId: string, person?: boolean, wallet?: boolean) {
     const user = await this.userRepo.findOne({
       where: { userId },
-      relations: { person, wallet },
+      relations: { person, wallet, banks: true },
     });
     return user;
   }
@@ -255,6 +257,14 @@ export class UserService {
       'Success',
       'You have Successfully Verified a user',
     );
+  }
+
+  async  addBank (userId: string, addBankDto: AddBankDto){
+    const user = await this.getUserById(userId)
+    if (!user) throw new UnauthorizedException({message: 'You are not unthorised to use this service'})
+    const bank = this.bankRepo.create(addBankDto)
+    const newBank = await this.bankRepo.save(bank)
+    await this.userRepo.save({...user, banks: [...user.banks, newBank], updatedAt: new Date()})
   }
 
   private async hashPassword(password: string) {

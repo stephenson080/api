@@ -13,9 +13,11 @@ import { UtilService } from 'src/util/util.service';
 import { ConfigService } from '@nestjs/config';
 import { Walletservice } from './wallet.service';
 import { Wallet } from 'src/models/wallet.entity';
+import { Order } from 'src/models/order.entity';
+import { Bank } from 'src/models/bank.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Person, Wallet]), PersonModule, JwtModule],
+  imports: [TypeOrmModule.forFeature([User, Person, Wallet, Order, Bank]), PersonModule, JwtModule],
   controllers: [UserController],
   providers: [UserService,AuthService, JwtStrategy, ConfigService, UtilService, Walletservice] ,
   exports: [UserService, Walletservice]

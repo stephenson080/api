@@ -32,6 +32,7 @@ import { MessageResponseDto, Roles } from 'src/utils/types';
 import { UserService } from './user.service';
 import { UtilService } from '../util/util.service';
 import {
+  AddBankDto,
   CreateUserDto,
   ForgotpasswordDto,
   LoggedInUserDto,
@@ -150,6 +151,17 @@ export class UserController {
   @Post('/forgot-password')
   async forgotPassword(@Body() forgotpasswordDto: ForgotpasswordDto) {
     return await this.userService.forgotPassword(forgotpasswordDto);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Bank Added!', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Post('bank/add-bank')
+  async addUserBank(@Body() addBankDto: AddBankDto, @Request() req: any) {
+    await this.userService.addBank(req.user.userId, addBankDto)
+    return new MessageResponseDto('Success', 'Bank Successfully Added!')
   }
 
   @ApiOkResponse({ description: 'Password Changed!', type: MessageResponseDto })

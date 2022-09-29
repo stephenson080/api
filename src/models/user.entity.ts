@@ -9,6 +9,8 @@ import {
 
   OneToMany
 } from 'typeorm';
+import { Bank } from './bank.entity';
+import { Order } from './order.entity';
 import { Person } from './person.entity';
 import { Property } from './property.entity';
 import { Wallet } from './wallet.entity';
@@ -46,6 +48,12 @@ import { Wallet } from './wallet.entity';
     @OneToMany(() => Property, (property) => property.user)
     properties: Property[]
 
+    @OneToMany(() => Bank, (bank) => bank.user)
+    banks: Bank[]
+
+    @OneToMany(() => Order, (order) => order.user)
+    orders: Order[]
+
     @OneToOne(() => Person)
     @JoinColumn()
     person: Person;
@@ -53,4 +61,6 @@ import { Wallet } from './wallet.entity';
     @OneToOne(() => Wallet)
     @JoinColumn()
     wallet: Wallet;
+
+    
   }

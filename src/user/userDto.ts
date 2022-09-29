@@ -121,6 +121,23 @@ export class VerifyUserDto {
     userIds: string[]
 }
 
+export class AddBankDto {
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    bankName: string
+
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    accountName: string
+
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    accountNumber: string
+}
+
 export class UserMessageResponseDto{
     @ApiProperty({type: String, enum: ['Success', 'Error' ]})
     type: string
