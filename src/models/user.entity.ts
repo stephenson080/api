@@ -10,7 +10,7 @@ import {
   OneToMany
 } from 'typeorm';
 import { Bank } from './bank.entity';
-import { Order } from './order.entity';
+import { Transaction } from './transaction.entity';
 import { Person } from './person.entity';
 import { Property } from './property.entity';
 import { Wallet } from './wallet.entity';
@@ -42,6 +42,12 @@ import { Wallet } from './wallet.entity';
     @Column({ nullable: true})
     token: string
 
+    @Column({ nullable: true})
+    secret: string
+
+    @Column({ nullable: true, default: false, type: Boolean})
+    faEnabled: boolean
+
     @Column({ type: 'timestamp without time zone', default: new Date() })
     updatedAt: Date;
 
@@ -51,8 +57,8 @@ import { Wallet } from './wallet.entity';
     @OneToMany(() => Bank, (bank) => bank.user)
     banks: Bank[]
 
-    @OneToMany(() => Order, (order) => order.user)
-    orders: Order[]
+    @OneToMany(() => Transaction, (transaction) => transaction.user)
+    orders: Transaction[]
 
     @OneToOne(() => Person)
     @JoinColumn()

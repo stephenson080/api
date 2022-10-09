@@ -1,10 +1,10 @@
-import { OrderCurrency, OrderType } from 'src/utils/types';
+import { TransactionCurrency, TransactionType } from 'src/utils/types';
 import { Entity, PrimaryColumn, Column, Generated, ManyToOne } from 'typeorm';
 import { Bank } from './bank.entity';
 import { User } from './user.entity';
 
 @Entity()
-export class Order {
+export class Transaction {
   @Generated('uuid')
   @PrimaryColumn({ type: 'uuid' })
   orderId: string;
@@ -27,16 +27,16 @@ export class Order {
   @Column({ nullable: true, type: 'bigint' })
   fiatAmount: number;
 
-  @Column({ type: 'enum', enum: OrderType })
-  type: OrderType;
+  @Column({ type: 'enum', enum: TransactionType })
+  type: TransactionType;
 
   @Column({
     type: 'enum',
-    enum: OrderCurrency,
+    enum: TransactionCurrency,
     nullable: false,
-    default: OrderCurrency.NAIRA,
+    default: TransactionCurrency.NAIRA,
   })
-  currency: OrderCurrency;
+  currency: TransactionCurrency;
 
   @Column({ type: 'timestamp without time zone', default: new Date() })
   createdAt: Date;

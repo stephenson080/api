@@ -1,5 +1,10 @@
 import { ethers } from 'ethers';
-import { encryption } from './util/crypto';
+import { encryption, inputDataResolver, ENSResolver } from './util/crypto';
+import {Axios} from 'axios'
+
+const axios = new Axios({})
+
+// console.log(axios)
 
 const polygonRPCProvider = ethers.getDefaultProvider(
   //"https://rpc.ankr.com/polygon"
@@ -13,20 +18,23 @@ const polygonRPCProvider = ethers.getDefaultProvider(
 export class Web3Wallet {
   constructor(
     public address: string,
-    public signer: ethers.Signer,
     public passwordEncryptedWallet: string,
     public staticEncryptedWallet: string,
     public salt: string,
   ) {}
-  static async reEncrypt(newPassword: string, salt: string, wallet: ethers.Wallet) {
+  static async reEncrypt(
+    newPassword: string,
+    salt: string,
+    wallet: ethers.Wallet,
+  ) {
     try {
       const result = await encryption(newPassword, salt);
       if (typeof result === 'object') {
         throw new Error('Error resetting wallet');
       }
-      return await wallet.encrypt(newPassword)
+      return await wallet.encrypt(newPassword);
     } catch (error) {
-        throw error
+      throw error;
     }
   }
   static async createWallet(password: string) {
@@ -44,11 +52,9 @@ export class Web3Wallet {
         result.staticHashedPassword,
       );
 
-      const signer = createdWallet.connect(polygonRPCProvider);
 
       return new Web3Wallet(
         createdWallet.address,
-        signer,
         randomEncryptedWallet,
         staticEncryptedWallet,
         result.salt,
@@ -65,7 +71,6 @@ export class Web3Wallet {
         throw new Error('Error importing wallet');
       }
       const importedWallet = ethers.Wallet.fromMnemonic(_mnemonic);
-      const signer = importedWallet.connect(polygonRPCProvider);
       const randomEncryptedWallet = await importedWallet.encrypt(
         result.randomHashedPassword,
       );
@@ -74,7 +79,6 @@ export class Web3Wallet {
       );
       return new Web3Wallet(
         importedWallet.address,
-        signer,
         randomEncryptedWallet,
         staticEncryptedWallet,
         result.salt,
@@ -93,7 +97,6 @@ export class Web3Wallet {
         throw new Error('Error Importing wallet');
       }
       const importedWallet = new ethers.Wallet(_privateKey, polygonRPCProvider);
-      const signer = importedWallet.connect(polygonRPCProvider);
       const randomEncryptedWallet = await importedWallet.encrypt(
         result.randomHashedPassword,
       );
@@ -102,7 +105,6 @@ export class Web3Wallet {
       );
       return new Web3Wallet(
         importedWallet.address,
-        signer,
         randomEncryptedWallet,
         staticEncryptedWallet,
         result.salt,
@@ -135,16 +137,109 @@ export class Web3Wallet {
   static async resetWalletWithsalt(
     staticEncryptedWallet: string,
     salt: string,
-    newPassword: string
+    newPassword: string,
   ) {
     try {
       const decryptedWallet = await ethers.Wallet.fromEncryptedJson(
         staticEncryptedWallet,
         salt,
       );
-      return await this.reEncrypt(newPassword, salt, decryptedWallet)
+      return await this.reEncrypt(newPassword, salt, decryptedWallet);
     } catch (error) {
       throw error;
+    }
+  }
+
+  static async sendTransaction(
+    walletInstance: ethers.Wallet,
+    params: any[],
+    contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
+    contractFunction: string,
+    contractAddress: string,
+    value?: string
+  ) {
+
+    const wallet = walletInstance.connect(polygonRPCProvider);
+
+    const nonce = await wallet.getTransactionCount();
+
+
+    // to = await ENSResolver(to);
+
+    // console.log(to)
+    // console.log(params.contractAddress)
+
+    const data = await inputDataResolver(contract, contractFunction, params, contractAddress);
+    console.log(data)
+
+    let type2TxInfo = await axios.get(
+      'https://gasstation-mumbai.matic.today/v2',
+    );
+    //let type2TxInfo = await axios.get("https://gasstation-mainnet.matic.network/v2");
+    const type2TxInfoObj = JSON.parse(type2TxInfo.data)
+    let feeData = await wallet.getFeeData();
+
+    let gasPrice = feeData.gasPrice;
+
+    console.log(params)
+
+    const gasEstimate = await wallet.estimateGas({
+      to: contractAddress,
+      data: data,
+      value: value,
+    });
+
+    const maticTxFee = gasEstimate.mul(gasPrice);
+
+    try {
+      // console.log(
+      //   'You are about to send ' +
+      //     params +
+      //     ' ' +
+      //     ' to ' +
+      //     to +
+      //     '. This transaction will cost a fee of ' +
+      //     ethers.utils.formatEther(maticTxFee) +
+      //     ' MATIC' +
+      //     ', Do you wish to proceed?',
+      // );
+
+      // const token = new ethers.Contract(to, abi, wallet);
+      // await token.transfer(wallet.address, 100000);
+
+      const rawTransaction = {
+        type: 2,
+        to: contractAddress,
+        data: data,
+        value: value,
+        nonce: nonce,
+        maxFeePerGas: ethers.utils.parseUnits(
+          `${Math.ceil(type2TxInfoObj.fast.maxFee)}`,
+          'gwei',
+        ),
+        maxPriorityFeePerGas: ethers.utils.parseUnits(
+          `${Math.ceil(type2TxInfoObj.fast.maxPriorityFee)}`,
+          'gwei',
+        ),
+        gasLimit: gasEstimate,
+        chainId: polygonRPCProvider._network.chainId,
+      };
+
+      console.log('chain id: ' + polygonRPCProvider._network.chainId);
+      console.log('Processing');
+      const transaction = await wallet.sendTransaction(rawTransaction);
+      console.log('Pending Confirmation...');
+
+      await transaction.wait(1);
+      console.log('Successful! Transaction Hash: ' + transaction.hash);
+      console.log('Success');
+      console.log(transaction);
+      console.log(
+        `Link to tx on polygonscan: https://mumbai.polygonscan.com/tx/${transaction.hash}`,
+      );
+      return transaction;
+    } catch (err) {
+      throw err
     }
   }
 }

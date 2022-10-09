@@ -15,8 +15,8 @@ import { v4 as uuid } from 'uuid';
 import { createWriteStream, unlinkSync } from 'fs';
 import { join } from 'path';
 
-import {OrderInitiateDto} from '../order/orderDto'
-import { OrderCurrency,MessageResponseDto } from 'src/utils/types';
+import {OrderInitiateDto} from '../transaction/transactionDto'
+import { TransactionCurrency,MessageResponseDto } from 'src/utils/types';
 
 type uploadfile = { path: string; type: string };
 
@@ -241,7 +241,7 @@ export class UtilService {
     await cloudinary.uploader.destroy(publicId);
   }
 
-  async initiatePaystackPayment(email: string, amount: string, currency: OrderCurrency) : Promise<OrderInitiateDto> {
+  async initiatePaystackPayment(email: string, amount: string, currency: TransactionCurrency) : Promise<OrderInitiateDto> {
     try {
       const res = await this.paystackHTTP.post(
         `https://api.paystack.co/transaction/initialize`,

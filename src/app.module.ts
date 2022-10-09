@@ -7,14 +7,15 @@ import { User } from './models/user.entity';
 import { UserModule } from './user/user.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { UtilModule } from './util/util.module';
-import { MulterModule } from '@nestjs/platform-express';
+
 import { PropertyModule } from './property/property.module';
 import { Property } from './models/property.entity';
 import { PropertyDetail } from './models/propertyDetail.entity';
 import { Wallet } from './models/wallet.entity';
 import { Bank } from './models/bank.entity';
-import { Order } from './models/order.entity';
-import { OrderModule } from './order/order.module';
+import { Transaction } from './models/transaction.entity';
+import { TransactionModule } from './transaction/transaction.module';
+
 
 
 // production Connection
@@ -24,7 +25,7 @@ import { OrderModule } from './order/order.module';
 //     TypeOrmModule.forRoot({
 //       type: 'postgres',
 //       url: process.env.DATABASE_URL,
-//       entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Order],
+//       entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction],
 //       synchronize: true,
 //       ssl: {
 //         rejectUnauthorized: false,
@@ -33,6 +34,7 @@ import { OrderModule } from './order/order.module';
 //     UserModule,
 //     UtilModule,
 //     PropertyModule,
+//      TransactionModule,
 //   ],
 //   controllers: [],
 //   providers: [
@@ -47,11 +49,6 @@ import { OrderModule } from './order/order.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MulterModule.registerAsync({
-      useFactory: () => ({
-        dest: './upload',
-      }),
-    }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -62,7 +59,7 @@ import { OrderModule } from './order/order.module';
         username: configService.get('DB_USERNAME'),
         password: configService.get('DB_PASSWORD'),
         database: configService.get('DB_NAME'),
-        entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Order],
+        entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction],
         synchronize: true
       }),
       inject: [ConfigService],
@@ -70,7 +67,7 @@ import { OrderModule } from './order/order.module';
     UserModule,
     UtilModule,
     PropertyModule,
-    OrderModule,
+    TransactionModule,
 
   ],
   controllers: [],

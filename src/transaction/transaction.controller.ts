@@ -27,13 +27,13 @@ import {
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { MessageResponseDto } from 'src/utils/types';
-import { OrderService } from './order.service';
-import { CreateOrderDto, OrderInitiateDto } from './orderDto';
+import { TransactionService } from './transaction.service';
+import { CreateOrderDto, OrderInitiateDto } from './transactionDto';
 
-@ApiTags('Order')
-@Controller('Order')
-export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+@ApiTags('Transaction')
+@Controller('Transaction')
+export class TransactionController {
+  constructor(private readonly orderService: TransactionService) {}
   @ApiBearerAuth()
   @Put('initite-buy-order')
   @ApiOkResponse({
@@ -46,7 +46,7 @@ export class OrderController {
     @Body() createOrderDto: CreateOrderDto,
     @Request() req,
   ) {
-    return await this.orderService.createOrder(req.user.userId, createOrderDto);
+    return await this.orderService.createTransaction(req.user.userId, createOrderDto);
   }
 
   @ApiBearerAuth()

@@ -7,23 +7,23 @@ import {
 } from 'class-validator';
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import { OrderCurrency, OrderType } from 'src/utils/types';
+import { TransactionCurrency, TransactionType } from 'src/utils/types';
 
 export class CreateOrderDto {
 
-  @ApiProperty({ type: String, required: true })
+  @ApiProperty({ type: String, required: false })
   @IsString()
   @IsNotEmpty()
-  bankId: string;
+  bankId?: string;
 
   @ApiProperty({ type: String, required: true })
   @IsString()
   @IsNotEmpty()
   tokenAddress: string;
 
-  @ApiProperty({ type: String, required: false, enum: OrderCurrency })
+  @ApiProperty({ type: String, required: false, enum: TransactionCurrency })
   @IsString()
-  currency: OrderCurrency;
+  currency: TransactionCurrency;
 
   @ApiProperty({ type: Number, required: true })
   @IsNumber()
@@ -33,9 +33,9 @@ export class CreateOrderDto {
   @IsNumber()
   fiatAmount: number;
 
-  @ApiProperty({ type: String, required: false, enum: OrderType })
+  @ApiProperty({ type: String, required: false, enum: TransactionType })
   @IsString()
-  type: OrderType;
+  type: TransactionType;
 }
 
 type OrderData = {

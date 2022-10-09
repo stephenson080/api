@@ -1,5 +1,5 @@
 import { Entity, PrimaryColumn, Column, Generated, ManyToOne, OneToMany } from 'typeorm';
-import { Order } from './order.entity';
+import { Transaction } from './transaction.entity';
 import { User } from './user.entity';
 
 @Entity()
@@ -29,6 +29,6 @@ export class Bank {
   @ManyToOne(() => User, (user) => user.banks)
   user: User;
 
-  @OneToMany(() => Order, (order) => order.bank)
-  orders: Order[];
+  @OneToMany(() => Transaction, (transaction) => transaction.bank)
+  orders: Transaction[];
 }

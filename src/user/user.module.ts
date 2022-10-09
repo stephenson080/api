@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { Person } from 'src/models/person.entity';
 import { User } from 'src/models/user.entity';
 import { UserController } from './user.controller';
@@ -13,13 +13,28 @@ import { UtilService } from 'src/util/util.service';
 import { ConfigService } from '@nestjs/config';
 import { Walletservice } from './wallet.service';
 import { Wallet } from 'src/models/wallet.entity';
-import { Order } from 'src/models/order.entity';
+import { Transaction } from 'src/models/transaction.entity';
 import { Bank } from 'src/models/bank.entity';
+// import { TransactionModule } from 'src/transaction/transaction.module';
+import { TransactionService } from 'src/transaction/transaction.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Person, Wallet, Order, Bank]), PersonModule, JwtModule],
+  imports: [
+    TypeOrmModule.forFeature([User, Person, Wallet, Transaction, Bank]),
+    PersonModule,
+    JwtModule,
+    // TransactionModule,
+  ],
   controllers: [UserController],
-  providers: [UserService,AuthService, JwtStrategy, ConfigService, UtilService, Walletservice] ,
-  exports: [UserService, Walletservice]
+  providers: [
+    UserService,
+    AuthService,
+    JwtStrategy,
+    ConfigService,
+    UtilService,
+    Walletservice,
+    TransactionService
+  ],
+  exports: [UserService, Walletservice, ],
 })
 export class UserModule {}

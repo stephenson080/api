@@ -26,14 +26,17 @@ import {
 } from '@nestjs/swagger';
 import { unlinkSync } from 'fs';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import {generateTotpUri} from 'authenticator'
 import { AuthService } from 'src/auth/auth.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { MessageResponseDto, Roles } from 'src/utils/types';
+import { MessageResponseDto, Roles, TransactionCurrency, TransactionType } from 'src/utils/types';
 import { UserService } from './user.service';
 import { UtilService } from '../util/util.service';
 import {
   AddBankDto,
+  ChangePasswordDto,
   CreateUserDto,
+  Enable2FaDto,
   ForgotpasswordDto,
   LoggedInUserDto,
   LoginUserDto,
@@ -42,7 +45,10 @@ import {
   VerifyUserDto,
 } from './userDto';
 import { PersonResponseDto } from '../person/personDto';
-import { CreateWalletDto } from './walletDto';
+import { CreateWalletDto, SendTransactionDto } from './walletDto';
+import { TransactionService } from 'src/transaction/transaction.service';
+import { Walletservice } from './wallet.service';
+import { CreateOrderDto } from 'src/transaction/transactionDto';
 
 @ApiTags('User')
 @Controller('User')
@@ -51,6 +57,8 @@ export class UserController {
     private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly utilService: UtilService,
+    private readonly transactionService: TransactionService,
+    private readonly walletService: Walletservice,
   ) {}
 
   @Post('login')
@@ -79,10 +87,18 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    const user = await this.userService.getUserById(req.user.userId, true, true);
-    const walletAddress = user.wallet ? user.wallet.walletAddress : ''
-    if (user.wallet)  delete user.wallet
-    return new UserResponseDto(user, walletAddress)
+    const user = await this.userService.getUserById(
+      req.user.userId,
+      true,
+      true,
+    );
+    const walletAddress = user.wallet ? user.wallet.walletAddress : '';
+    let uri = ''
+    if (user.secret){
+      uri = generateTotpUri(user.secret, user.email, 'Blockplot', 'SHA1', 6, 30)
+    }
+    if (user.wallet) delete user.wallet;
+    return new UserResponseDto(user, walletAddress, uri);
   }
 
   @ApiBearerAuth()
@@ -108,11 +124,7 @@ export class UserController {
         document_url: {
           type: 'string',
           format: 'binary',
-        },
-        video_url: {
-          type: 'string',
-          format: 'binary',
-        },
+        }
       },
     },
     // description: 'Files',
@@ -125,7 +137,6 @@ export class UserController {
     @UploadedFiles()
     files: {
       image_url: Express.Multer.File[];
-      video_url: Express.Multer.File[];
       document_url: Express.Multer.File[];
     },
   ) {
@@ -154,27 +165,47 @@ export class UserController {
   }
 
   @ApiBearerAuth()
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiOkResponse({ description: 'Password Change!', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Patch('/change-password')
+  async changepassword(@Body() changePasswordDto: ChangePasswordDto, @Request() req: any) {
+    return await this.userService.changePassword(changePasswordDto.newPassword, req.user.userId)
+  }
+
+  @ApiOkResponse({ description: 'Password Changed!', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @Patch('/reset-password/')
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    return await this.userService.resetPassword(
+      resetPasswordDto.code,
+      resetPasswordDto.newPassword,
+    );
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: '2FA enabled!', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Post('/enable-2fa/')
+  async enabled2Fa(@Body() enable2FaDto: Enable2FaDto, @Request() req: any,) {
+    return await this.userService.enable2Fa(req.user.userId, enable2FaDto.token)
+  }
+
+  @ApiBearerAuth()
   @ApiOkResponse({ description: 'Bank Added!', type: MessageResponseDto })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @UseGuards(JwtAuthGuard)
   @Post('bank/add-bank')
   async addUserBank(@Body() addBankDto: AddBankDto, @Request() req: any) {
-    await this.userService.addBank(req.user.userId, addBankDto)
-    return new MessageResponseDto('Success', 'Bank Successfully Added!')
+    await this.userService.addBank(req.user.userId, addBankDto);
+    return new MessageResponseDto('Success', 'Bank Successfully Added!');
   }
 
-  @ApiOkResponse({ description: 'Password Changed!', type: MessageResponseDto })
-  @ApiBadRequestResponse({ description: 'Something went wrong' })
-  @Patch('/reset-password/')
-  async resetPassword(
-    @Body() resetPasswordDto: ResetPasswordDto,
-  ) {
-    return await this.userService.resetPassword(
-      resetPasswordDto.code,
-      resetPasswordDto.newPassword,
-    );
-  }
+  
 
   @ApiBearerAuth()
   @ApiOkResponse({
@@ -189,8 +220,62 @@ export class UserController {
     @Request() req: any,
     @Body() createWalletDto: CreateWalletDto,
   ) {
-    return await this.userService.createWallet(req.user.userId, createWalletDto.passcode)
+    return await this.userService.createWallet(
+      req.user.userId,
+      createWalletDto.passcode,
+    );
   }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    description: 'User send crypto to other wallet',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @UseGuards(JwtAuthGuard)
+  @Post('wallet/send-transaction')
+  async sendTransaction(
+    @Request() req: any,
+    @Body() sendTransactionDto: SendTransactionDto,
+    @Query('contract')
+    contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
+    @Query('function') contractFunction: string,
+  ) {
+    const user = await this.userService.getUserById(req.user.userId, false, true);
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'Sorry you are not unauthorised',
+      });
+    // if (!user.isVerified) throw new UnauthorizedException({message: "you have'nt to completed your Kyc"})
+    const transaction = await this.walletService.sendWalletTransaction(
+      user.wallet,
+      sendTransactionDto.password,
+      sendTransactionDto.params,
+      contract,
+      contractFunction,
+      sendTransactionDto.to
+    );
+    
+    await this.transactionService.createTransaction(user.userId, transaction.createTransactionDto, true, transaction.reference)
+    return new MessageResponseDto('Success', `Transaction Successful. Here is your transaction hash ${transaction.reference}`)
+  }
+
+  // @ApiBearerAuth()
+  // @ApiOkResponse({
+  //   description: 'User creates wallet',
+  //   type: MessageResponseDto,
+  // })
+  // @ApiBadRequestResponse({ description: 'Something went wrong' })
+  // @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  // @UseGuards(JwtAuthGuard)
+  // @Put('wallet/create')
+  // async createUserWallet(
+  //   @Request() req: any,
+  //   @Body() createWalletDto: CreateWalletDto,
+  // ) {
+  //   return await this.userService.createWallet(req.user.userId, createWalletDto.passcode)
+  // }
 
   @ApiBearerAuth()
   @ApiOkResponse({
@@ -212,11 +297,12 @@ export class UserController {
       });
     const users = await this.userService.getAllUsers(isActive, isVerified);
     return users.map((u) => {
-      const walletAddress = u.wallet ? u.wallet.walletAddress : ''
-      if (u.wallet) delete u.wallet
+      const walletAddress = u.wallet ? u.wallet.walletAddress : '';
+      if (u.wallet) delete u.wallet;
+      if (u.secret)  delete u.secret
       return {
-        ...new UserResponseDto(u, walletAddress)
-      }
+        ...new UserResponseDto(u, walletAddress, ''),
+      };
     });
   }
 
@@ -243,6 +329,4 @@ export class UserController {
         : verifyUserDto.userIds,
     );
   }
-
-  
 }

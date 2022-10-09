@@ -49,6 +49,9 @@ export class UserResponseDto {
     @Exclude()
     token:string
 
+    @ApiProperty({type: String})
+    secret:string
+
     @Exclude()
     createdAt: Date
 
@@ -58,9 +61,13 @@ export class UserResponseDto {
     @ApiProperty({type: String})
     walletAddress: string
 
-    constructor(user: Partial<any>, wallet: string){
+    @ApiProperty({type: String})
+    twoFAUri: string
+
+    constructor(user: Partial<any>, wallet: string, uri: string){
         Object.assign(this, user)
         this.walletAddress = wallet
+        this.twoFAUri= uri
     }
 }
 
@@ -74,6 +81,13 @@ export class LoginUserDto {
     @IsString()
     @IsNotEmpty()
     password: string
+}
+
+export class Enable2FaDto {
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    token: string
 }
 
 export class LoggedInUserDto{
@@ -136,6 +150,13 @@ export class AddBankDto {
     @IsString()
     @IsNotEmpty()
     accountNumber: string
+}
+
+export class ChangePasswordDto {
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    newPassword: string
 }
 
 export class UserMessageResponseDto{

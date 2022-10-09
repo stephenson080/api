@@ -2,8 +2,10 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
+import {generateKey, verifyToken} from 'authenticator'
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/models/user.entity';
@@ -47,6 +49,9 @@ export class UserService {
 
       const passwordHash = await this.hashPassword(user.password);
 
+      const secret = generateKey()
+
+
       const newPerson = await this.personService.createPerson({
         phone: user.phone,
         fullName: user.fullName,
@@ -55,6 +60,7 @@ export class UserService {
       const newUser = this.userRepo.create({
         email: user.email,
         password: passwordHash,
+        secret: secret.replace(' ', '')
       });
       await this.userRepo.save({
         ...newUser,
@@ -128,15 +134,15 @@ export class UserService {
       await this.personService.editPerson(user.person.phone, {
         imageUrl: filePublicIds[1].url,
         documentUrl: filePublicIds[0].url,
-        videoUrl: filePublicIds[2].url,
       });
       await this.userRepo.save({
         ...user,
+        isVerified: true,
         updatedAt: new Date(),
       });
       return new MessageResponseDto(
         'Success',
-        `Document Upload Successful, Please wait, while we verify your details`,
+        `Documents Upload Successful, Please wait, while we verify your details`,
       );
     } catch (error) {
       // deleting image from cloudinary if there was an error
@@ -226,6 +232,37 @@ export class UserService {
     } catch (error) {
       throw error;
     }
+  }
+
+  async changePassword(newPassword: string, id: string){
+      let resetWallet : any
+      const user = await this.userRepo.findOne({where: {userId: id}, relations: {wallet: true}})
+      if (!user)
+        throw new UnauthorizedException({
+          message: 'Not Authorised',
+        });
+      if (user.wallet){
+        resetWallet = await this.walletService.resetUserWallet(user.wallet.walletId, user.wallet.salt, user.wallet.staticEncryptedWallet, newPassword)
+      }
+      const passordHash = await this.hashPassword(newPassword);
+      await this.editUser(user.userId, { password: passordHash, wallet: resetWallet });
+      return new MessageResponseDto(
+        'Success',
+        'Password Changed!',
+      );
+    
+  }
+
+  async enable2Fa(userId: string, token: string){
+    const user = await this.getUserById(userId)
+    if (!user) throw new UnauthorizedException({message: "Not authorised"})
+    if (user.faEnabled) throw new BadRequestException({message: '2FA already enabled'})
+    const result = verifyToken(user.secret, token)
+    if (!result){
+      throw new BadRequestException({message: 'Invalid Token'})
+    }
+    await this.editUser(user.userId, {faEnabled: true})
+    return new MessageResponseDto('Success', '2 Factor Enabled Successfully')
   }
 
   //admin services

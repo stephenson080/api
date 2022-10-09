@@ -2,10 +2,13 @@ import {
   BadRequestException,
   Injectable,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
 import { Wallet } from 'src/models/wallet.entity';
+import { CreateOrderDto } from 'src/transaction/transactionDto';
+import { TransactionCurrency, TransactionType } from 'src/utils/types';
 import { Web3Wallet } from 'src/web3/wallet';
 import { Repository } from 'typeorm';
 
@@ -26,14 +29,92 @@ export class Walletservice {
     return await this.walletRepo.save(wallet);
   }
 
-  async decryptWallet(passcode: string, salt: string, encryptedWalletJson: string){
-      return await Web3Wallet.decryptWallet(passcode, encryptedWalletJson, salt)
+  async decryptWallet(
+    passcode: string,
+    salt: string,
+    encryptedWalletJson: string,
+  ) {
+    return await Web3Wallet.decryptWallet(passcode, encryptedWalletJson, salt);
   }
 
-  async resetUserWallet(walletId: string, salt: string, staticEncryptedWallet: string, newPassword: string){
-    const wallet = await this.walletRepo.findOneBy({walletId})
-    if (!wallet) throw new BadRequestException({message: 'No Wallet Found!. Please try again. If Problem persist contact support'})
-    const newPasswordEncryptedJson = await Web3Wallet.resetWalletWithsalt(staticEncryptedWallet, salt, newPassword)
-    return await this.walletRepo.save({...wallet, passwordEncryptedWallet: newPasswordEncryptedJson})
+  async resetUserWallet(
+    walletId: string,
+    salt: string,
+    staticEncryptedWallet: string,
+    newPassword: string,
+  ) {
+    const wallet = await this.walletRepo.findOneBy({ walletId });
+    if (!wallet)
+      throw new BadRequestException({
+        message:
+          'No Wallet Found!. Please try again. If Problem persist contact support',
+      });
+    const newPasswordEncryptedJson = await Web3Wallet.resetWalletWithsalt(
+      staticEncryptedWallet,
+      salt,
+      newPassword,
+    );
+    return await this.walletRepo.save({
+      ...wallet,
+      passwordEncryptedWallet: newPasswordEncryptedJson,
+    });
+  }
+
+  async sendWalletTransaction(
+    wallet: Wallet,
+    password: string,
+    params: any[],
+    contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
+    contractFunction: string,
+    contractAddress: string
+  ) {
+    try {
+      const ethersWallet = await this.decryptWallet(
+        password,
+        wallet.salt,
+        wallet.passwordEncryptedWallet,
+      );
+      if (!ethersWallet)
+        throw new BadRequestException({
+          message: 'OPPs! Seems your password is incorrect. try again',
+        });
+      if (contract === 'initialSale' ){
+        await Web3Wallet.sendTransaction(ethersWallet, [contractAddress, ethers.constants.MaxUint256], 'token', 'approve', params[0])
+        const transaction = await Web3Wallet.sendTransaction(ethersWallet, params, contract, contractFunction, contractAddress)
+        await Web3Wallet.sendTransaction(ethersWallet, [contractAddress, '0'], 'token', 'approve', params[0])
+        const createTransactionDto : CreateOrderDto = {currency: TransactionCurrency.DOLLARS, fiatAmount: +params[2] * 600, tokenAddress: params[0], tokenAmount: +params[2], type: TransactionType.BUY_ASSET}
+        return {
+          createTransactionDto,
+          reference: transaction.hash
+        }
+      }
+      if (contract === 'swap'){
+        await Web3Wallet.sendTransaction(ethersWallet, [contractAddress, true], 'blockplot', 'setApprovalForAll', '0x19eEea9D7e2d71f9f67e14d4A25eC1A058cA2631')
+        const transaction = await Web3Wallet.sendTransaction(ethersWallet, params, contract, contractFunction, contractAddress)
+        await Web3Wallet.sendTransaction(ethersWallet, [contractAddress, false], 'blockplot', 'setApprovalForAll', '0x19eEea9D7e2d71f9f67e14d4A25eC1A058cA2631')
+        const createTransactionDto : CreateOrderDto = {currency: TransactionCurrency.DOLLARS, fiatAmount: +params[2] * 600, tokenAddress: params[0], tokenAmount: +params[2], type: TransactionType.BUY_ASSET}
+        return {
+          createTransactionDto,
+          reference: transaction.hash
+        }
+      }
+      const transaction = await Web3Wallet.sendTransaction(
+        ethersWallet,
+        params,
+        contract,
+        contractFunction,
+        contractAddress
+      );
+      const amount = ethers.utils.formatEther(params[1])
+      const createTransactionDto : CreateOrderDto = {currency: TransactionCurrency.DOLLARS, fiatAmount: +amount * 600, tokenAddress: contractAddress, tokenAmount: +amount, type: TransactionType.SEND_CRYPTO}
+      return {
+        createTransactionDto,
+        reference: transaction.hash
+      }
+    } catch (error) {
+      // if (error.message.length > 200) throw new UnprocessableEntityException({message: 'Something went wrong. Try Agin. If it persist Contact Support'}) 
+
+      throw new UnprocessableEntityException({message: error.message})
+    }
   }
 }
