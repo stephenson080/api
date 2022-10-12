@@ -12,23 +12,34 @@ export class PropertyDetail{
     id : string
 
     @Column({
-        type: 'bigint',
+        type: 'decimal',
         default: 0
     })
     totalUnits: number
 
     @Column({
+        type: 'decimal',
+        default: 0
+    })
+    rent: number
+
+
+    @Column({
+        type: 'smallint',
         nullable: true
     })
     stories: number
 
     @Column({
-        type: 'bigint', nullable: true
+        type: 'decimal', nullable: true
     })
     landSize :number
 
     @Column({type: 'simple-array', nullable: true})
     images: string[]
+
+    @Column({type: 'simple-array', nullable: true})
+    documents: string[]
 
     @Column({ type: 'enum', nullable: true, enum: PropertyType })
     propertyType: PropertyType

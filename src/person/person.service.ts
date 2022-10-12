@@ -10,9 +10,9 @@ export class PersonService {
     @InjectRepository(Person) private readonly personRepo: Repository<Person>,
   ) {}
 
-  async createPerson(person: CreatePersonDto, institutionId?: string) {
+  async createPerson(person: CreatePersonDto, documentUrl?: string) {
     try {
-      const newPerson = this.personRepo.create(person);
+      const newPerson = this.personRepo.create({...person, documentUrl});
       return await this.personRepo.save(newPerson);
     } catch (error) {
       throw new UnprocessableEntityException({ message: error.message });

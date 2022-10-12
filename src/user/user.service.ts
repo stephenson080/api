@@ -5,18 +5,26 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-import {generateKey, verifyToken} from 'authenticator'
+import {UploadApiResponse} from 'cloudinary'
+import { generateKey, verifyToken } from 'authenticator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from 'src/models/user.entity';
 import { hash, compareSync } from 'bcrypt';
-import { AddBankDto, CreateUserDto, ForgotpasswordDto, UserKYCDto } from './userDto';
+import {
+  AddBankDto,
+  CreateUserDto,
+  ForgotpasswordDto,
+  UserKYCDto,
+} from './userDto';
 import { PersonService } from 'src/person/person.service';
 // import { Person } from 'src/models/person.entity';
-import { MessageResponseDto } from 'src/utils/types';
+import { MessageResponseDto, Roles } from 'src/utils/types';
 import { UtilService } from 'src/util/util.service';
 import { Walletservice } from './wallet.service';
 import { Bank } from 'src/models/bank.entity';
+import { Wallet } from 'src/models/wallet.entity';
+import { unlink } from 'fs';
 
 @Injectable()
 export class UserService {
@@ -36,7 +44,9 @@ export class UserService {
     return user;
   }
 
-  async createUser(user: CreateUserDto) {
+  async createUser(user: CreateUserDto, file?: Express.Multer.File) {
+    let upload: UploadApiResponse
+    let uploadedFile: {path: string, type: string} []
     try {
       const existUser = await this.getUserByEmail(user.email);
       if (existUser)
@@ -49,32 +59,55 @@ export class UserService {
 
       const passwordHash = await this.hashPassword(user.password);
 
-      const secret = generateKey()
+      const secret = generateKey();
+      
+      if (file){
+        uploadedFile = this.utilService.validateFilesUpload({[file.fieldname] : [file]})
+        upload = await this.utilService.uploadFileToCloudinary(uploadedFile[0]);
+      }
+      
 
+      let wallet : Wallet 
+      if (user.custom){
+        if (!user.walletAddress) throw new BadRequestException({message: "Your wallet address is required"})
+        wallet = await this.walletService.customWallet(user.walletAddress)
+      }
 
       const newPerson = await this.personService.createPerson({
         phone: user.phone,
         fullName: user.fullName,
-      });
+      }, upload ? upload.url : undefined);
 
       const newUser = this.userRepo.create({
         email: user.email,
         password: passwordHash,
-        secret: secret.replace(' ', '')
+        secret: secret.replace(' ', ''),
+        role: user.role ? user.role : Roles.USER,
+        wallet
       });
       await this.userRepo.save({
         ...newUser,
         person: newPerson,
       });
 
-      this.utilService.sendMail(
-        user.email,
-        'Welcome to Blockplot, your fractional real estate platform',
-        `Hello, ${user.fullName} your Registation was Successful`,
-      );
+      // this.utilService.sendMail(
+      //   user.email,
+      //   'Welcome to Blockplot, your fractional real estate platform',
+      //   `Hello, ${user.fullName} your Registation was Successful`,
+      // );
 
       return new MessageResponseDto('Success', 'Resistration Success');
     } catch (error) {
+      if (upload){
+        await this.utilService.deleteFileFromCloudinary(upload.public_id)
+      }
+      if (uploadedFile){
+        unlink(uploadedFile[0].path, err => {
+          if (err){
+          console.log(err.message)
+          }
+        })
+      }
       return new MessageResponseDto('Error', error.message);
     }
   }
@@ -85,8 +118,11 @@ export class UserService {
       throw new UnauthorizedException({ message: 'Something went wrong' });
     if (user.wallet)
       throw new BadRequestException({ message: 'you already have a wallet' });
-    const isMatch = compareSync(passcode, user.password)
-    if (!isMatch) throw new BadRequestException({message: 'Sorry your password is incorrect'})
+    const isMatch = compareSync(passcode, user.password);
+    if (!isMatch)
+      throw new BadRequestException({
+        message: 'Sorry your password is incorrect',
+      });
     const wallet = await this.walletService.createWallet(passcode);
     await this.userRepo.save({ ...user, wallet });
     return new MessageResponseDto(
@@ -198,7 +234,7 @@ export class UserService {
       const code = token.split('-')[0];
       await this.editUser(person.personId, { token: code });
 
-      console.log(code)
+      console.log(code);
 
       // this.utilService.sendMail(
       //   user.email,
@@ -213,18 +249,30 @@ export class UserService {
 
   async resetPassword(token: string, newPassword: string) {
     try {
-      let resetWallet : any 
-      const user = await this.userRepo.findOne({where: {token}, relations: {wallet: true}})
+      let resetWallet: any;
+      const user = await this.userRepo.findOne({
+        where: { token },
+        relations: { wallet: true },
+      });
       if (!user)
         throw new BadRequestException({
           message: 'This email Link has been used or it is invalid',
         });
       const passordHash = await this.hashPassword(newPassword);
-      if (user.wallet){
-        resetWallet = await this.walletService.resetUserWallet(user.wallet.walletId, user.wallet.salt, user.wallet.staticEncryptedWallet, newPassword)
+      if (user.wallet) {
+        resetWallet = await this.walletService.resetUserWallet(
+          user.wallet.walletId,
+          user.wallet.salt,
+          user.wallet.staticEncryptedWallet,
+          newPassword,
+        );
       }
-      
-      await this.editUser(user.userId, { password: passordHash, token: null, wallet: resetWallet });
+
+      await this.editUser(user.userId, {
+        password: passordHash,
+        token: null,
+        wallet: resetWallet,
+      });
       return new MessageResponseDto(
         'Success',
         'Your Password has been changed',
@@ -234,35 +282,43 @@ export class UserService {
     }
   }
 
-  async changePassword(newPassword: string, id: string){
-      let resetWallet : any
-      const user = await this.userRepo.findOne({where: {userId: id}, relations: {wallet: true}})
-      if (!user)
-        throw new UnauthorizedException({
-          message: 'Not Authorised',
-        });
-      if (user.wallet){
-        resetWallet = await this.walletService.resetUserWallet(user.wallet.walletId, user.wallet.salt, user.wallet.staticEncryptedWallet, newPassword)
-      }
-      const passordHash = await this.hashPassword(newPassword);
-      await this.editUser(user.userId, { password: passordHash, wallet: resetWallet });
-      return new MessageResponseDto(
-        'Success',
-        'Password Changed!',
+  async changePassword(newPassword: string, id: string) {
+    let resetWallet: any;
+    const user = await this.userRepo.findOne({
+      where: { userId: id },
+      relations: { wallet: true },
+    });
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'Not Authorised',
+      });
+    if (user.wallet) {
+      resetWallet = await this.walletService.resetUserWallet(
+        user.wallet.walletId,
+        user.wallet.salt,
+        user.wallet.staticEncryptedWallet,
+        newPassword,
       );
-    
+    }
+    const passordHash = await this.hashPassword(newPassword);
+    await this.editUser(user.userId, {
+      password: passordHash,
+      wallet: resetWallet,
+    });
+    return new MessageResponseDto('Success', 'Password Changed!');
   }
 
-  async enable2Fa(userId: string, token: string){
-    const user = await this.getUserById(userId)
-    if (!user) throw new UnauthorizedException({message: "Not authorised"})
-    if (user.faEnabled) throw new BadRequestException({message: '2FA already enabled'})
-    const result = verifyToken(user.secret, token)
-    if (!result){
-      throw new BadRequestException({message: 'Invalid Token'})
+  async enable2Fa(userId: string, token: string) {
+    const user = await this.getUserById(userId);
+    if (!user) throw new UnauthorizedException({ message: 'Not authorised' });
+    if (user.faEnabled)
+      throw new BadRequestException({ message: '2FA already enabled' });
+    const result = verifyToken(user.secret, token);
+    if (!result) {
+      throw new BadRequestException({ message: 'Invalid Token' });
     }
-    await this.editUser(user.userId, {faEnabled: true})
-    return new MessageResponseDto('Success', '2 Factor Enabled Successfully')
+    await this.editUser(user.userId, { faEnabled: true });
+    return new MessageResponseDto('Success', '2 Factor Enabled Successfully');
   }
 
   //admin services
@@ -271,16 +327,48 @@ export class UserService {
     await this.editUser(userId, { isActive: false });
   }
 
-  async getAllUsers(isActive?: boolean, isVerified?: boolean) {
+  async getAllUsers(userId: string, isActive?: boolean, isVerified?: boolean, ) {
+    const user = await this.getUserById(userId);
+    if (!user)
+      throw new BadRequestException({
+        message: 'Something went wrong. Contact Support',
+      });
+      if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
+      throw new UnauthorizedException({
+        message: "You are not Authorised to use this service",
+      });
+    if (!user.isVerified)
+      throw new UnauthorizedException({
+        message: "You can't use this service because you haven't been verified",
+      });
+    if(!user.isActive) throw new UnauthorizedException({
+      message: "You account has been Frozen. Contact Support",
+    });
     return await this.userRepo.find({
-      where: [{ isActive, isVerified }, { isActive }, { isVerified }, {}], relations: {person: true, wallet: true}
+      where: [{ isActive, isVerified }, { isActive }, { isVerified }, {}],
+      relations: { person: true, wallet: true },
     });
   }
 
-  async verifyUsersOrUser(userIdsOrUserId: string | string[]) {
+  async verifyUsersOrUser(userIdsOrUserId: string | string[], userId: string) {
+    const user = await this.getUserById(userId);
+    if (!user)
+      throw new BadRequestException({
+        message: 'Something went wrong. Contact Support',
+      });
+      if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
+      throw new UnauthorizedException({
+        message: "You are not Authorised to use this service",
+      });
+    if (!user.isVerified)
+      throw new UnauthorizedException({
+        message: "You can't use this service because you haven't been verified",
+      });
+    if(!user.isActive) throw new UnauthorizedException({
+      message: "You account has been Frozen. Contact Support",
+    });
     if (typeof userIdsOrUserId === 'object') {
       for (let id of userIdsOrUserId) {
-        // to do: make some smart contract transactions
         await this.editUser(id, { isVerified: true });
       }
       return new MessageResponseDto(
@@ -288,7 +376,6 @@ export class UserService {
         'You have Successfully Verified all users',
       );
     }
-    // to do: make some smart contract transactions
     await this.editUser(userIdsOrUserId, { isVerified: true });
     return new MessageResponseDto(
       'Success',
@@ -296,12 +383,19 @@ export class UserService {
     );
   }
 
-  async  addBank (userId: string, addBankDto: AddBankDto){
-    const user = await this.getUserById(userId)
-    if (!user) throw new UnauthorizedException({message: 'You are not unthorised to use this service'})
-    const bank = this.bankRepo.create(addBankDto)
-    const newBank = await this.bankRepo.save(bank)
-    await this.userRepo.save({...user, banks: [...user.banks, newBank], updatedAt: new Date()})
+  async addBank(userId: string, addBankDto: AddBankDto) {
+    const user = await this.getUserById(userId);
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'You are not unthorised to use this service',
+      });
+    const bank = this.bankRepo.create(addBankDto);
+    const newBank = await this.bankRepo.save(bank);
+    await this.userRepo.save({
+      ...user,
+      banks: [...user.banks, newBank],
+      updatedAt: new Date(),
+    });
   }
 
   private async hashPassword(password: string) {

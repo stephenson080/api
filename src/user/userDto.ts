@@ -1,7 +1,7 @@
-import {IsNotEmpty, IsString, IsEmail, IsArray} from 'class-validator'
+import {IsNotEmpty, IsString, IsEmail, IsArray, IsBoolean} from 'class-validator'
 import {Exclude} from 'class-transformer'
 import {ApiProperty} from '@nestjs/swagger'
-import {Gender, Roles} from '../utils/types'
+import {Roles} from '../utils/types'
 import { PersonResponseDto } from 'src/person/personDto'
 export class CreateUserDto {
 
@@ -10,7 +10,7 @@ export class CreateUserDto {
     @IsNotEmpty()
     password: string
 
-    @ApiProperty({type: String, required: false})
+    @ApiProperty({type: String, required: true})
     @IsString()
     fullName: string
 
@@ -23,6 +23,15 @@ export class CreateUserDto {
     @IsString()
     @IsNotEmpty()
     phone: string
+
+    @ApiProperty({type: String, required: false})
+    walletAddress?: string
+
+    @ApiProperty({type: Boolean, required: false})
+    custom?: boolean
+
+    @ApiProperty({type: String, enum: Roles, required: false})
+    role?: Roles
 
 }
 

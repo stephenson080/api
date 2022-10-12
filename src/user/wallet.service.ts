@@ -29,6 +29,11 @@ export class Walletservice {
     return await this.walletRepo.save(wallet);
   }
 
+  async customWallet (walletAddress: string){
+    const wallet = this.walletRepo.create({walletAddress})
+    return await this.walletRepo.save(wallet)
+  }
+
   async decryptWallet(
     passcode: string,
     salt: string,

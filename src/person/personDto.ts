@@ -1,5 +1,4 @@
 import {IsNotEmpty, IsEmail, IsString} from 'class-validator'
-import {Gender} from '../utils/types'
 import {ApiProperty} from '@nestjs/swagger'
 import { Exclude } from 'class-transformer'
 export class CreatePersonDto {

@@ -1,5 +1,6 @@
 import { ethers } from 'ethers';
 import { encryption, inputDataResolver, ENSResolver } from './util/crypto';
+import { pbkdf2Sync, randomBytes } from 'crypto';
 import {Axios} from 'axios'
 
 const axios = new Axios({})
@@ -140,9 +141,16 @@ export class Web3Wallet {
     newPassword: string,
   ) {
     try {
+      const staticHashedPassword = pbkdf2Sync(
+        salt,
+        '1234567890abcdef',
+        1000,
+        64,
+        `sha512`,
+      ).toString('hex');
       const decryptedWallet = await ethers.Wallet.fromEncryptedJson(
         staticEncryptedWallet,
-        salt,
+        staticHashedPassword,
       );
       return await this.reEncrypt(newPassword, salt, decryptedWallet);
     } catch (error) {

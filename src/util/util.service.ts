@@ -191,27 +191,27 @@ export class UtilService {
           throw new BadRequestException({
             message: `${file} must be an image`,
           });
-        if (fileObj.size > 200000)
+        if (fileObj.size > 2000000) // change file size to 200kb
           throw new BadRequestException({
             message: `${file} should not be more than 200kb`,
           });
       } else {
         const fileObj: Express.Multer.File = files[file][0];
-        if (
-          fileObj.mimetype !== 'video/x-flv' &&
-          fileObj.mimetype !== 'video/mp4' &&
-          fileObj.mimetype !== 'application/x-mpegURL' &&
-          fileObj.mimetype !== 'video/MP2T' &&
-          fileObj.mimetype !== 'video/3gpp' &&
-          fileObj.mimetype !== 'video/quicktime' &&
-          fileObj.mimetype !== 'video/MP2T' &&
-          fileObj.mimetype !== 'video/3gpp' &&
-          fileObj.mimetype !== 'video/x-msvideo' &&
-          fileObj.mimetype !== 'video/x-ms-wmv'
-        )
-          throw new BadRequestException({
-            message: `${file} Must be a video file`,
-          });
+        // if (
+        //   fileObj.mimetype !== 'video/x-flv' &&
+        //   fileObj.mimetype !== 'video/mp4' &&
+        //   fileObj.mimetype !== 'application/x-mpegURL' &&
+        //   fileObj.mimetype !== 'video/MP2T' &&
+        //   fileObj.mimetype !== 'video/3gpp' &&
+        //   fileObj.mimetype !== 'video/quicktime' &&
+        //   fileObj.mimetype !== 'video/MP2T' &&
+        //   fileObj.mimetype !== 'video/3gpp' &&
+        //   fileObj.mimetype !== 'video/x-msvideo' &&
+        //   fileObj.mimetype !== 'video/x-ms-wmv'
+        // )
+        //   throw new BadRequestException({
+        //     message: `${file} Must be a video file`,
+        //   });
         if (fileObj.size > 10000000)
           throw new BadRequestException({
             message: `${file} should not be more than 10mb`,

@@ -9,6 +9,7 @@ import {
   UseGuards,
   UploadedFiles,
   UseInterceptors,
+  UploadedFile,
   Patch,
   ParseUUIDPipe,
   Query,
@@ -25,7 +26,7 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { unlinkSync } from 'fs';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import {generateTotpUri} from 'authenticator'
 import { AuthService } from 'src/auth/auth.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -101,6 +102,55 @@ export class UserController {
     return new UserResponseDto(user, walletAddress, uri);
   }
 
+  @ApiOkResponse({ description: 'Adds new Real estate Company', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseInterceptors(
+    FileInterceptor('document'),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        document: {
+          type: 'string',
+          format: 'binary',
+        },
+        fullName: {
+          type: 'string',
+        },
+        email: {
+          type: 'string',
+        },
+        phone: {
+          type: 'string',
+        },
+        walletAddress: {
+          type: 'string',
+        },
+        password: {
+          type: 'string'
+        },
+        role: {
+          type: 'string',
+        },
+        custom: {
+          type: 'boolean',
+        }
+      },
+    },
+    // description: 'Files',
+    // type: FileUploadDto
+  })
+  @Post('register-real-estate')
+  async registerRealEstate(
+    @UploadedFile()
+    file : Express.Multer.File,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+      return await this.userService.createUser(createUserDto, file)
+  }
+
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'User is Verified', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
@@ -109,7 +159,6 @@ export class UserController {
     FileFieldsInterceptor([
       { name: 'image_url', maxCount: 1 },
       { name: 'document_url', maxCount: 1 },
-      { name: 'video_url', maxCount: 1 },
     ]),
   )
   @ApiConsumes('multipart/form-data')
@@ -291,18 +340,17 @@ export class UserController {
     @Query('isActive') isActive: boolean,
     @Query('isVerified') isVerified: boolean,
   ) {
-    if (req.user.username !== Roles.ADMIN)
+    if (req.user.username !== Roles.ADMIN && req.user.username !== Roles.SUPER_ADMIN)
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
       });
-    const users = await this.userService.getAllUsers(isActive, isVerified);
+    const users = await this.userService.getAllUsers(req.user.userId, isActive, isVerified);
     return users.map((u) => {
       const walletAddress = u.wallet ? u.wallet.walletAddress : '';
       if (u.wallet) delete u.wallet;
       if (u.secret)  delete u.secret
-      return {
-        ...new UserResponseDto(u, walletAddress, ''),
-      };
+      // delete u.password
+      return new UserResponseDto(u, walletAddress, '')
     });
   }
 
@@ -319,7 +367,7 @@ export class UserController {
     @Request() req: any,
     @Body() verifyUserDto: VerifyUserDto,
   ) {
-    if (req.user.username !== Roles.ADMIN)
+    if (req.user.username !== Roles.ADMIN && req.user.username !== Roles.SUPER_ADMIN)
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
       });
@@ -327,6 +375,7 @@ export class UserController {
       verifyUserDto.userIds.length === 1
         ? verifyUserDto.userIds[0]
         : verifyUserDto.userIds,
+        req.user.userId
     );
   }
 }

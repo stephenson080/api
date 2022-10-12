@@ -4,24 +4,7 @@ export enum Roles {
   SUPER_ADMIN = 'SUPER_ADMIN',
   ADMIN = 'ADMIN',
   USER = 'USER',
-  CANDIDATE = 'Candidate',
-  FACILITATOR = 'Facilatator',
-}
-
-export enum Gender {
-  MALE = 'Male',
-  FEMALE = 'Female',
-}
-
-export enum OrganisatioType {
-  SCHOOL = 'School',
-  PRIVATE_INSTITUTION = 'Private Institution',
-  OTHERS = 'Others',
-}
-
-export enum ElectionType {
-  ONLINE = 'Online',
-  PHYSICAL = 'Physical',
+  AGENT = 'AGENT',
 }
 
 export class FileUploadDto {

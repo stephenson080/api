@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { unlink } from 'fs';
 import { Property } from 'src/models/property.entity';
@@ -28,7 +28,10 @@ export class PropertyService {
 
   async addProperty(
     property: AddPropertyDto,
-    files: Express.Multer.File[],
+    files: {
+      images: Express.Multer.File[];
+      documents: Express.Multer.File[];
+    },
     userId: string,
   ) {
     const existProperty = await this.getPerperty(property.name);
@@ -41,29 +44,59 @@ export class PropertyService {
       throw new BadRequestException({
         message: 'Something went wrong. Contact Support',
       });
-    let filePublicIds: { public_id: string; url: string }[] = [];
-    const uploadFiles = await this.utilService.uploadPropertyImages(files);
+    if (!user.isVerified)
+      throw new UnauthorizedException({message :  "You can't use this service because you haven't been verified"})
+    let imagesPublicIds: { public_id: string; url: string }[] = [];
+    let documentsPublicIds: { public_id: string; url: string }[] = [];
+    const uploadImageFiles = await this.utilService.uploadPropertyImages(
+      files.images,
+    );
+    const uploadDocumentsFiles = await this.utilService.uploadPropertyImages(
+      files.documents,
+    );
 
-    // uploading file to cloudinary
-    for (let file of uploadFiles) {
+    // uploading images to cloudinary
+    for (let file of uploadImageFiles) {
       try {
         const upload = await this.utilService.uploadFileToCloudinary(file);
-        filePublicIds.push({ public_id: upload.public_id, url: upload.url });
+        imagesPublicIds.push({ public_id: upload.public_id, url: upload.url });
+      } catch (error) {
+        throw error;
+      }
+    }
+    // uploading documents to cloudinary
+    for (let file of uploadDocumentsFiles) {
+      try {
+        const upload = await this.utilService.uploadFileToCloudinary(file);
+        documentsPublicIds.push({
+          public_id: upload.public_id,
+          url: upload.url,
+        });
       } catch (error) {
         throw error;
       }
     }
 
-    // after uploading to cloudinary, delete the files
-    for (let file of uploadFiles){
-      if (file.path){
-        unlink(file.path, err => {if (err) console.log(err.message)})
+    // after uploading to cloudinary, delete the files from server
+    for (let file of uploadImageFiles) {
+      if (file.path) {
+        unlink(file.path, (err) => {
+          if (err) console.log(err.message);
+        });
+      }
+    }
+    for (let file of uploadDocumentsFiles) {
+      if (file.path) {
+        unlink(file.path, (err) => {
+          if (err) console.log(err.message);
+        });
       }
     }
 
     // saving property to db
     const detObj = this.detailRepo.create({
-      images: filePublicIds.map((f) => f.url),
+      images: imagesPublicIds.map((f) => f.url),
+      documents: documentsPublicIds.map((f) => f.url),
       propertyType: property.type ? property.type : null,
       landSize: property.landSize ? property.landSize : null,
       stories: property.stories ? property.stories : null,
@@ -76,9 +109,8 @@ export class PropertyService {
       currentPrice: property.currentPrice ? property.currentPrice : null,
       user,
     });
-   
-    await this.propertyRepo.save(prop);
 
+    await this.propertyRepo.save(prop);
   }
 
   async getProperties(isListed?: boolean, userId?: string) {
@@ -99,16 +131,18 @@ export class PropertyService {
     });
   }
 
-  private async editProperty(property: Property, editDto: any){
-    await this.propertyRepo.save({...property, updatedAt: new Date(), ...editDto})
+  private async editProperty(property: Property, editDto: any) {
+    await this.propertyRepo.save({
+      ...property,
+      updatedAt: new Date(),
+      ...editDto,
+    });
   }
 
-  async listProperty(propertyId: string, listPropertyDto: ListPropertyDto){
-    const property = await this.getPerperty(undefined, undefined, propertyId)
-    if (!property) throw new BadRequestException({messge: 'No Property Found!'})
-    // todo:  make some smart contract transaction's to mint token for property
-    // the smart contract returns the tokenId, 
-    await this.editProperty(property, {...listPropertyDto, isListed: true})
-
+  async listProperty(propertyId: string, listPropertyDto: ListPropertyDto) {
+    const property = await this.getPerperty(undefined, undefined, propertyId);
+    if (!property)
+      throw new BadRequestException({ messge: 'No Property Found!' });
+    await this.editProperty(property, { ...listPropertyDto, isListed: true });
   }
 }

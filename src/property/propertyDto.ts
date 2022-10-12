@@ -19,6 +19,10 @@ export class AddPropertyDto {
     @IsNumber()
     stories: number
 
+    @ApiProperty({type: Number, required: true})
+    @IsNumber()
+    rent: number
+
     @ApiProperty({type: Number, required: false})
     @IsNumber()
     currentPrice: number
@@ -89,6 +93,11 @@ export class ListPropertyDto {
     @IsNumber()
     @IsNotEmpty()
     tokenPrice: number
+
+    @ApiProperty({type: Number})
+    @IsNumber()
+    @IsNotEmpty()
+    tokenId: number
 
     @ApiProperty({type: Number})
     @IsNumber()
