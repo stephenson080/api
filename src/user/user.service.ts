@@ -5,7 +5,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { v4 as uuid } from 'uuid';
-import {UploadApiResponse} from 'cloudinary'
+import { UploadApiResponse } from 'cloudinary';
 import { generateKey, verifyToken } from 'authenticator';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -25,12 +25,15 @@ import { Walletservice } from './wallet.service';
 import { Bank } from 'src/models/bank.entity';
 import { Wallet } from 'src/models/wallet.entity';
 import { unlink } from 'fs';
+import { Property } from 'src/models/property.entity';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(Bank) private readonly bankRepo: Repository<Bank>,
+    @InjectRepository(Property)
+    private readonly propertyRepo: Repository<Property>,
     private readonly personService: PersonService,
     private readonly walletService: Walletservice,
     private readonly utilService: UtilService,
@@ -39,14 +42,14 @@ export class UserService {
   async getUserById(userId: string, person?: boolean, wallet?: boolean) {
     const user = await this.userRepo.findOne({
       where: { userId },
-      relations: { person, wallet, banks: true },
+      relations: { person, wallet, banks: true, properties: true },
     });
     return user;
   }
 
   async createUser(user: CreateUserDto, file?: Express.Multer.File) {
-    let upload: UploadApiResponse
-    let uploadedFile: {path: string, type: string} []
+    let upload: UploadApiResponse;
+    let uploadedFile: { path: string; type: string }[];
     try {
       const existUser = await this.getUserByEmail(user.email);
       if (existUser)
@@ -60,30 +63,37 @@ export class UserService {
       const passwordHash = await this.hashPassword(user.password);
 
       const secret = generateKey();
-      
-      if (file){
-        uploadedFile = this.utilService.validateFilesUpload({[file.fieldname] : [file]})
+
+      if (file) {
+        uploadedFile = this.utilService.validateFilesUpload({
+          [file.fieldname]: [file],
+        });
         upload = await this.utilService.uploadFileToCloudinary(uploadedFile[0]);
       }
-      
 
-      let wallet : Wallet 
-      if (user.custom){
-        if (!user.walletAddress) throw new BadRequestException({message: "Your wallet address is required"})
-        wallet = await this.walletService.customWallet(user.walletAddress)
+      let wallet: Wallet;
+      if (user.custom) {
+        if (!user.walletAddress)
+          throw new BadRequestException({
+            message: 'Your wallet address is required',
+          });
+        wallet = await this.walletService.customWallet(user.walletAddress);
       }
 
-      const newPerson = await this.personService.createPerson({
-        phone: user.phone,
-        fullName: user.fullName,
-      }, upload ? upload.url : undefined);
+      const newPerson = await this.personService.createPerson(
+        {
+          phone: user.phone,
+          fullName: user.fullName,
+        },
+        upload ? upload.url : undefined,
+      );
 
       const newUser = this.userRepo.create({
         email: user.email,
         password: passwordHash,
         secret: secret.replace(' ', ''),
         role: user.role ? user.role : Roles.USER,
-        wallet
+        wallet,
       });
       await this.userRepo.save({
         ...newUser,
@@ -98,15 +108,15 @@ export class UserService {
 
       return new MessageResponseDto('Success', 'Resistration Success');
     } catch (error) {
-      if (upload){
-        await this.utilService.deleteFileFromCloudinary(upload.public_id)
+      if (upload) {
+        await this.utilService.deleteFileFromCloudinary(upload.public_id);
       }
-      if (uploadedFile){
-        unlink(uploadedFile[0].path, err => {
-          if (err){
-          console.log(err.message)
+      if (uploadedFile) {
+        unlink(uploadedFile[0].path, (err) => {
+          if (err) {
+            console.log(err.message);
           }
-        })
+        });
       }
       return new MessageResponseDto('Error', error.message);
     }
@@ -129,6 +139,41 @@ export class UserService {
       'Success',
       `Wallet created! here is your wallet address ${wallet.walletAddress}`,
     );
+  }
+
+  async addUserAsset(userId: string, tokenId: number) {
+    const user = await this.getUserById(userId);
+    let newAssetArray: number[] = [];
+    if (!user.myAssets) {
+      const newAsset = await this.propertyRepo.findOneBy({ tokenId });
+      if (!newAsset) {
+        return;
+      }
+      newAssetArray = [tokenId];
+      this.editUser(user.userId, { myAssets: newAssetArray });
+      return;
+    }
+    const asset = user.myAssets.find((a) => a == tokenId);
+    if (asset) {
+      return;
+    }
+    const newAsset = await this.propertyRepo.findOneBy({ tokenId });
+    if (!newAsset) {
+      return;
+    }
+    newAssetArray = [...user.myAssets];
+    newAssetArray.push(tokenId)
+
+    this.editUser(user.userId, { myAssets: newAssetArray });
+  }
+
+  async removeUserAsset(userId: string, tokenId: number) {
+    const user = await this.getUserById(userId);
+    let newAssetArray: number[] = [];
+    
+    newAssetArray= user.myAssets.filter(a => a != tokenId)
+
+    this.editUser(user.userId, { myAssets: newAssetArray });
   }
 
   async getUserByEmail(email: string, person?: boolean) {
@@ -327,23 +372,24 @@ export class UserService {
     await this.editUser(userId, { isActive: false });
   }
 
-  async getAllUsers(userId: string, isActive?: boolean, isVerified?: boolean, ) {
+  async getAllUsers(userId: string, isActive?: boolean, isVerified?: boolean) {
     const user = await this.getUserById(userId);
     if (!user)
       throw new BadRequestException({
         message: 'Something went wrong. Contact Support',
       });
-      if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
+    if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
       throw new UnauthorizedException({
-        message: "You are not Authorised to use this service",
+        message: 'You are not Authorised to use this service',
       });
     if (!user.isVerified)
       throw new UnauthorizedException({
         message: "You can't use this service because you haven't been verified",
       });
-    if(!user.isActive) throw new UnauthorizedException({
-      message: "You account has been Frozen. Contact Support",
-    });
+    if (!user.isActive)
+      throw new UnauthorizedException({
+        message: 'You account has been Frozen. Contact Support',
+      });
     return await this.userRepo.find({
       where: [{ isActive, isVerified }, { isActive }, { isVerified }, {}],
       relations: { person: true, wallet: true },
@@ -356,17 +402,18 @@ export class UserService {
       throw new BadRequestException({
         message: 'Something went wrong. Contact Support',
       });
-      if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
+    if (user.role !== Roles.ADMIN && user.role !== Roles.SUPER_ADMIN)
       throw new UnauthorizedException({
-        message: "You are not Authorised to use this service",
+        message: 'You are not Authorised to use this service',
       });
     if (!user.isVerified)
       throw new UnauthorizedException({
         message: "You can't use this service because you haven't been verified",
       });
-    if(!user.isActive) throw new UnauthorizedException({
-      message: "You account has been Frozen. Contact Support",
-    });
+    if (!user.isActive)
+      throw new UnauthorizedException({
+        message: 'You account has been Frozen. Contact Support',
+      });
     if (typeof userIdsOrUserId === 'object') {
       for (let id of userIdsOrUserId) {
         await this.editUser(id, { isVerified: true });

@@ -36,6 +36,11 @@ export class AddPropertyDto {
     type?: PropertyType
 }
 
+export class GetMyAssetsDto{
+    @ApiProperty({type: [Number]})
+    tokenIds: number[]
+}
+
 export class PropertyResponseDto {
     @ApiProperty({type: String})
     propertyId: string
@@ -64,6 +69,9 @@ export class PropertyResponseDto {
     @ApiProperty()
     details: any
 
+    @ApiProperty()
+    metadata: any
+
 
     @Exclude()
     isActive: boolean
@@ -83,8 +91,9 @@ export class PropertyResponseDto {
     @Exclude()
     user: UserResponseDto | undefined
 
-    constructor(user: Partial<any>){
+    constructor(user: Partial<any>, metadata: any){
         Object.assign(this, user)
+        this.metadata = metadata
     }
 }
 

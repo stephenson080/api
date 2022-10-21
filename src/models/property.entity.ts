@@ -53,4 +53,5 @@ import { User } from './user.entity';
 
     @ManyToOne(() => User, (user) => user.properties)
     user: User
+    
   }

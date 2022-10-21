@@ -24,6 +24,7 @@ type uploadfile = { path: string; type: string };
 export class UtilService {
   transporter: Transporter;
   paystackHTTP: Axios;
+  flutterwaveHttp: Axios;
   constructor(private readonly configService: ConfigService) {
     this.transporter = createTransport({
       service: 'gmail',
@@ -42,6 +43,13 @@ export class UtilService {
       headers: {
         
         Authorization: `Bearer ${this.configService.get('PAYSTACK_KEY')}`,
+      },
+    });
+
+    this.flutterwaveHttp = new Axios({
+      headers: {
+        
+        Authorization: `Bearer ${this.configService.get('FLUTTERWAVE_KEY')}`,
       },
     });
   }
@@ -258,12 +266,21 @@ export class UtilService {
     try {
       const res = await this.paystackHTTP.get(`https://api.paystack.co/transaction/verify/${reference}`)
       const data = JSON.parse(res.data)
-      if (data.status === 'success'){
-        return new MessageResponseDto('Success', 'Payment Successful')
-      }
-      return new MessageResponseDto('Success', res.data.data.status)
+      return data
+      
     } catch (error) {
       throw new UnprocessableEntityException({message: error.message})
     }
   }
+
+  async verifyFlutterwavePayment(reference: string){
+    try {
+      const res = await this.flutterwaveHttp.get(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`)
+      const data = JSON.parse(res.data)
+      return data
+    } catch (error) {
+      throw new UnprocessableEntityException({message: error.message})
+    }
+  }
+
 }

@@ -5,7 +5,7 @@ import { pbkdf2Sync, randomBytes } from 'crypto';
 // import swapABI from './ABIs/ISwapERC1155.json';
 // import blockPlotABI from './ABIs/IBlockPlotERC1155.json';
 
-const contractToABI = {
+export const contractToABI = {
   token: [
     {
       "constant": true,
@@ -1616,11 +1616,6 @@ const contractToABI = {
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "_uri",
-          "type": "string"
-        },
-        {
           "internalType": "address",
           "name": "_identityAddress",
           "type": "address"
@@ -1657,6 +1652,37 @@ const contractToABI = {
         }
       ],
       "name": "ApprovalForAll",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint256",
+          "name": "assetId",
+          "type": "uint256"
+        },
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "indexed": true,
+          "internalType": "string",
+          "name": "symbol",
+          "type": "string"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "costToDollar",
+          "type": "uint256"
+        }
+      ],
+      "name": "AssetInitialized",
       "type": "event"
     },
     {
@@ -1952,30 +1978,36 @@ const contractToABI = {
           "type": "uint256"
         }
       ],
-      "name": "costToDollar",
+      "name": "idToMetadata",
       "outputs": [
         {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "symbol",
+          "type": "string"
+        },
         {
           "internalType": "uint256",
-          "name": "id",
+          "name": "totalSupply",
           "type": "uint256"
-        }
-      ],
-      "name": "exists",
-      "outputs": [
+        },
+        {
+          "internalType": "uint256",
+          "name": "vestingPeriod",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "costToDollar",
+          "type": "uint256"
+        },
         {
           "internalType": "bool",
-          "name": "",
+          "name": "initialized",
           "type": "bool"
         }
       ],
@@ -2006,6 +2038,34 @@ const contractToABI = {
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "_name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_symbol",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_costToDollar",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_vestingPeriod",
+          "type": "uint256"
+        }
+      ],
+      "name": "initializeAsset",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -2195,19 +2255,6 @@ const contractToABI = {
     {
       "inputs": [
         {
-          "internalType": "string",
-          "name": "baseURI",
-          "type": "string"
-        }
-      ],
-      "name": "setBaseURI",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "uint256",
           "name": "assetId",
           "type": "uint256"
@@ -2219,24 +2266,6 @@ const contractToABI = {
         }
       ],
       "name": "setCostToDollar",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        },
-        {
-          "internalType": "string",
-          "name": "tokenURI",
-          "type": "string"
-        }
-      ],
-      "name": "setURI",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2263,25 +2292,6 @@ const contractToABI = {
     {
       "inputs": [
         {
-          "internalType": "uint256",
-          "name": "id",
-          "type": "uint256"
-        }
-      ],
-      "name": "totalSupply",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
           "internalType": "address",
           "name": "newOwner",
           "type": "address"
@@ -2297,44 +2307,6 @@ const contractToABI = {
       "name": "unPause",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "tokenId",
-          "type": "uint256"
-        }
-      ],
-      "name": "uri",
-      "outputs": [
-        {
-          "internalType": "string",
-          "name": "",
-          "type": "string"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "name": "vestingPeriod",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     }
   ],
@@ -2375,7 +2347,7 @@ export async function inputDataResolver(
   params: any[],
   contractAddress: string,
 ) {
-  console.log('okay', contract, functionName)
+  console.log('okay', contractAddress, functionName)
   const contractInterface = new ethers.utils.Interface(contractToABI[contract]);
   if (contract === 'token') {
     if (functionName === 'transfer') {

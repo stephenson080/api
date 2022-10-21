@@ -33,7 +33,7 @@ export class Web3Wallet {
       if (typeof result === 'object') {
         throw new Error('Error resetting wallet');
       }
-      return await wallet.encrypt(newPassword);
+      return await wallet.encrypt(result);
     } catch (error) {
       throw error;
     }
@@ -131,6 +131,7 @@ export class Web3Wallet {
       );
       return decryptedWallet;
     } catch (error) {
+      console.log(error)
       throw error;
     }
   }
@@ -174,8 +175,6 @@ export class Web3Wallet {
 
     // to = await ENSResolver(to);
 
-    // console.log(to)
-    // console.log(params.contractAddress)
 
     const data = await inputDataResolver(contract, contractFunction, params, contractAddress);
     console.log(data)
@@ -184,36 +183,22 @@ export class Web3Wallet {
       'https://gasstation-mumbai.matic.today/v2',
     );
     //let type2TxInfo = await axios.get("https://gasstation-mainnet.matic.network/v2");
+
     const type2TxInfoObj = JSON.parse(type2TxInfo.data)
-    let feeData = await wallet.getFeeData();
+    // let feeData = await wallet.getFeeData();
 
-    let gasPrice = feeData.gasPrice;
+    // let gasPrice = feeData.gasPrice;
 
-    console.log(params)
-
+   
     const gasEstimate = await wallet.estimateGas({
       to: contractAddress,
       data: data,
       value: value,
     });
 
-    const maticTxFee = gasEstimate.mul(gasPrice);
+    // const maticTxFee = gasEstimate.mul(gasPrice);
 
     try {
-      // console.log(
-      //   'You are about to send ' +
-      //     params +
-      //     ' ' +
-      //     ' to ' +
-      //     to +
-      //     '. This transaction will cost a fee of ' +
-      //     ethers.utils.formatEther(maticTxFee) +
-      //     ' MATIC' +
-      //     ', Do you wish to proceed?',
-      // );
-
-      // const token = new ethers.Contract(to, abi, wallet);
-      // await token.transfer(wallet.address, 100000);
 
       const rawTransaction = {
         type: 2,
@@ -239,14 +224,12 @@ export class Web3Wallet {
       console.log('Pending Confirmation...');
 
       await transaction.wait(1);
-      console.log('Successful! Transaction Hash: ' + transaction.hash);
-      console.log('Success');
-      console.log(transaction);
       console.log(
         `Link to tx on polygonscan: https://mumbai.polygonscan.com/tx/${transaction.hash}`,
       );
       return transaction;
     } catch (err) {
+      
       throw err
     }
   }

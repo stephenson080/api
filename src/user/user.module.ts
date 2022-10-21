@@ -17,10 +17,13 @@ import { Transaction } from 'src/models/transaction.entity';
 import { Bank } from 'src/models/bank.entity';
 // import { TransactionModule } from 'src/transaction/transaction.module';
 import { TransactionService } from 'src/transaction/transaction.service';
+import { Property } from 'src/models/property.entity';
+import { PropertyService } from 'src/property/property.service';
+import { PropertyDetail } from 'src/models/propertyDetail.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Person, Wallet, Transaction, Bank]),
+    TypeOrmModule.forFeature([User, Person, Wallet, Transaction, Bank, Property, PropertyDetail]),
     PersonModule,
     JwtModule,
     // TransactionModule,
@@ -33,8 +36,9 @@ import { TransactionService } from 'src/transaction/transaction.service';
     ConfigService,
     UtilService,
     Walletservice,
-    TransactionService
+    TransactionService,
+    PropertyService
   ],
-  exports: [UserService, Walletservice, ],
+  exports: [UserService, Walletservice,  ],
 })
 export class UserModule {}

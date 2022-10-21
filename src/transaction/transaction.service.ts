@@ -8,15 +8,31 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from 'src/models/transaction.entity';
 import { UserService } from 'src/user/user.service';
 import { UtilService } from 'src/util/util.service';
-import { TransactionType } from 'src/utils/types';
+import {
+  TransactionType,
+  PaymentMethod,
+  MessageResponseDto,
+} from 'src/utils/types';
 import { Repository } from 'typeorm';
-import { CreateOrderDto, OrderInitiateDto } from './transactionDto';
+import {
+  CreateOrderDto,
+  OrderInitiateDto,
+  VerifyPaymentDto,
+} from './transactionDto';
+import { ethers } from 'ethers';
+import { ConfigService } from '@nestjs/config';
+import { Web3Wallet } from 'src/web3/wallet';
+const polygonRPCProvider = ethers.getDefaultProvider(
+  //"https://rpc.ankr.com/polygon"
+  'https://rpc-mumbai.maticvigil.com',
+);
 
 @Injectable()
 export class TransactionService {
   constructor(
     @InjectRepository(Transaction)
     private readonly transactionRepo: Repository<Transaction>,
+    private readonly configService: ConfigService,
     private readonly userService: UserService,
     private readonly utilService: UtilService,
   ) {}
@@ -25,7 +41,7 @@ export class TransactionService {
     userId: string,
     createOrderDto: CreateOrderDto,
     crypto?: boolean,
-    hash?: string
+    hash?: string,
   ) {
     const user = await this.userService.getUserById(userId);
     if (!user)
@@ -42,47 +58,101 @@ export class TransactionService {
     //     message: "You can't make an order unless a complete your Kyc",
     //   });
 
-
     let order: Transaction;
-    let initOrder : OrderInitiateDto
     if (!crypto) {
-      const bank = user.banks.find((b) => b.bankId === createOrderDto.bankId);
-      if (!bank)
-        throw new BadRequestException({ message: 'Please Select a Bank' });
-      initOrder = await this.utilService.initiatePaystackPayment(
-        user.email,
-        createOrderDto.fiatAmount.toString(),
-        createOrderDto.currency,
-      );
-      if (!initOrder.status)
-        throw new UnprocessableEntityException({ message: initOrder.message });
+      // const bank = user.banks.find((b) => b.bankId === createOrderDto.bankId);
+      // if (!bank)
+      //   throw new BadRequestException({ message: 'Please Select a Bank' });
+
       order = this.transactionRepo.create({
         ...createOrderDto,
-        authorizationUrl: initOrder.data.authorization_url,
-        accessCode: initOrder.data.access_code,
-        reference: initOrder.data.reference,
         user,
-        bank,
       });
+      return await this.transactionRepo.save(order);
     }
 
     order = this.transactionRepo.create({
       ...createOrderDto,
       reference: hash ? hash : '',
+      isVerified: true,
       user,
     });
-    await this.transactionRepo.save(order);
-    return crypto ? order : initOrder
+    return await this.transactionRepo.save(order);
   }
 
-  async verifyPaystackPayment(reference: string) {
-    return await this.utilService.verifyPaystackPayment(reference);
+  async verifyPayment(reference: string, userId: string) {
+    const user = await this.userService.getUserById(userId, undefined, true);
+    if (!user.wallet)
+      throw new BadRequestException({
+        message: 'No Wallet found to send Funds',
+      });
+    const existTrx = await this.transactionRepo.findOneBy({
+      reference: reference,
+    });
+    if (!existTrx)
+      throw new BadRequestException({ message: 'No Transaction Found' });
+    if (existTrx.paymentMethod === PaymentMethod.FLUTTERWAVE) {
+      const data = await this.utilService.verifyFlutterwavePayment(
+        existTrx.reference,
+      );
+      if (data.status === 'success') {
+        if (existTrx.isVerified)
+          throw new BadRequestException({
+            message: 'Transaction Already completed!',
+          });
+        const wallet = new ethers.Wallet(
+          this.configService.get('KEY'),
+          polygonRPCProvider,
+        );
+        await Web3Wallet.sendTransaction(
+          wallet,
+          [user.wallet.walletAddress, existTrx.tokenAmount.toString()],
+          'token',
+          'transfer',
+          existTrx.tokenAddress,
+        );
+        await this.editTransaction(existTrx.orderId, { isVerified: true });
+        return new MessageResponseDto('Success', 'Funding Succesful');
+      }
+      return new MessageResponseDto('Error', 'Could not Verify Payment');
+    }
+
+    const data = await this.utilService.verifyPaystackPayment(
+      existTrx.reference,
+    );
+    if (data.status) {
+      if (existTrx.isVerified)
+        throw new BadRequestException({
+          message: 'Transaction Already completed!',
+        });
+      const wallet = new ethers.Wallet(
+        this.configService.get('KEY'),
+        polygonRPCProvider,
+      );
+      await Web3Wallet.sendTransaction(
+        wallet,
+        [user.wallet.walletAddress, existTrx.tokenAmount.toString()],
+        'token',
+        'transfer',
+        existTrx.tokenAddress,
+      );
+      await this.editTransaction(existTrx.orderId, { isVerified: true });
+      return new MessageResponseDto('Success', 'Funding Succesful');
+    }
+    return new MessageResponseDto('Error', data.message);
+  }
+
+  async getUsersTransactions(userId: string, isVerified?: boolean) {
+    return await this.transactionRepo.find({
+      relations: { bank: true },
+      where: { isVerified, user: {userId}},
+    });
   }
 
   async getAllTransaction(isVerified?: boolean) {
     return await this.transactionRepo.find({
-      relations: { user: true },
-      where: { isVerified },
+      relations: { user: true, bank: true},
+      where: { isVerified, },
     });
   }
 

@@ -34,6 +34,12 @@ export enum TransactionCurrency {
   DOLLARS = 'USD',
 }
 
+export enum  PaymentMethod {
+  PAYSTACK = 'PAYSTACK',
+  FLUTTERWAVE = 'FLUTTERWAVE',
+  CRYPTO = 'CRYPTO',
+}
+
 export class MessageResponseDto {
   @ApiProperty({ type: String, enum: ['Success', 'Error'] })
   type: string;

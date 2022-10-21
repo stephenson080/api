@@ -1,4 +1,4 @@
-import { TransactionCurrency, TransactionType } from 'src/utils/types';
+import { PaymentMethod, TransactionCurrency, TransactionType } from 'src/utils/types';
 import { Entity, PrimaryColumn, Column, Generated, ManyToOne } from 'typeorm';
 import { Bank } from './bank.entity';
 import { User } from './user.entity';
@@ -25,6 +25,9 @@ export class Transaction {
   tokenAmount: number;
 
   @Column({ nullable: true, type: 'bigint' })
+  assetId: number;
+
+  @Column({ nullable: true, type: 'bigint' })
   fiatAmount: number;
 
   @Column({ type: 'enum', enum: TransactionType })
@@ -37,6 +40,13 @@ export class Transaction {
     default: TransactionCurrency.NAIRA,
   })
   currency: TransactionCurrency;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentMethod,
+    nullable: true,
+  })
+  paymentMethod: PaymentMethod;
 
   @Column({ type: 'timestamp without time zone', default: new Date() })
   createdAt: Date;

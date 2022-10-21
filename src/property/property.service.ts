@@ -113,16 +113,27 @@ export class PropertyService {
     await this.propertyRepo.save(prop);
   }
 
-  async getProperties(isListed?: boolean, userId?: string) {
+  async getProperties(isListed?: boolean, userId?: string, tokenId?: number) {
     return await this.propertyRepo.find({
       where: [
         { isListed },
         { isListed, user: { userId } },
+        { isListed, tokenId },
         { user: { userId } },
       ],
       relations: { details: true },
     });
   }
+
+  async getPropertiesByTokenIds(tokenIds: number[]){
+    const properties : Property[] = []
+    for (let id of tokenIds){
+      const property = await this.getPerperty(undefined, +id, undefined)
+      properties.push(property)
+    }
+    return properties
+  }
+
 
   async getAllProperties(isListed: boolean) {
     return await this.propertyRepo.find({

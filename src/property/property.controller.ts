@@ -33,9 +33,11 @@ import { PropertyService } from './property.service';
 import { UtilService } from '../util/util.service';
 import {
   AddPropertyDto,
+  GetMyAssetsDto,
   ListPropertyDto,
   PropertyResponseDto,
 } from './propertyDto';
+import { getAssetMetadata } from '../web3/asset';
 
 @ApiTags('Property')
 @Controller('Property')
@@ -131,13 +133,22 @@ export class PropertyController {
   @UseGuards(JwtAuthGuard)
   @Get('get-properties')
   async getProperties(@Query('isListed') isListed: boolean) {
+    const mappedProperties: PropertyResponseDto[] = [];
     const properties = await this.propertyService.getProperties(isListed);
-    return properties.map((p) => new PropertyResponseDto(p));
+    for (let property of properties) {
+      let metadata = {};
+      if (property.tokenId >= 0 && property.isListed) {
+        metadata = await getAssetMetadata(property.tokenId);
+      }
+      const p = new PropertyResponseDto(property, metadata);
+      mappedProperties.push(p);
+    }
+    return mappedProperties;
   }
 
   @ApiBearerAuth()
   @ApiOkResponse({
-    description: "Get user's Properties that are list or not",
+    description: "Get Agent's Properties that are list or not",
     type: [PropertyResponseDto],
   })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
@@ -152,7 +163,44 @@ export class PropertyController {
       isListed,
       req.user.userId,
     );
-    return properties.map((p) => new PropertyResponseDto(p));
+    const mappedProperties: PropertyResponseDto[] = [];
+    for (let property of properties) {
+      let metadata = {};
+      if (property.tokenId >= 0 && property.isListed) {
+        metadata = await getAssetMetadata(property.tokenId);
+      }
+      const p = new PropertyResponseDto(property, metadata);
+      mappedProperties.push(p);
+    }
+    return mappedProperties;
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    description: "Get user's Assets",
+    type: [PropertyResponseDto],
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @UseGuards(JwtAuthGuard)
+  @Post('user/get-assets')
+  async getUserAssets(
+    @Request() req: any,
+    @Body() getMyAssetDto: GetMyAssetsDto,
+  ) {
+    const properties = await this.propertyService.getPropertiesByTokenIds(
+      getMyAssetDto.tokenIds,
+    );
+    const mappedProperties: PropertyResponseDto[] = [];
+    for (let property of properties) {
+      let metadata = {};
+      if (property.tokenId >= 0 && property.isListed) {
+        metadata = await getAssetMetadata(property.tokenId);
+      }
+      const p = new PropertyResponseDto(property, metadata);
+      mappedProperties.push(p);
+    }
+    return mappedProperties;
   }
 
   @ApiBearerAuth()
@@ -173,7 +221,16 @@ export class PropertyController {
         message: 'you are not authorised to use this service',
       });
     const properties = await this.propertyService.getAllProperties(isListed);
-    return properties.map((p) => new PropertyResponseDto(p));
+    const mappedProperties: PropertyResponseDto[] = [];
+    for (let property of properties) {
+      let metadata = {};
+      if (property.tokenId >= 0 && property.isListed) {
+        metadata = await getAssetMetadata(property.tokenId);
+      }
+      const p = new PropertyResponseDto(property, metadata);
+      mappedProperties.push(p);
+    }
+    return mappedProperties;
   }
 
   @ApiBearerAuth()
@@ -200,6 +257,4 @@ export class PropertyController {
       'Property successfully Minted and Listed',
     );
   }
-
- 
 }

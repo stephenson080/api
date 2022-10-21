@@ -73,10 +73,14 @@ export class UserResponseDto {
     @ApiProperty({type: String})
     twoFAUri: string
 
-    constructor(user: Partial<any>, wallet: string, uri: string){
+    @ApiProperty()
+    myAssets: any
+
+    constructor(user: Partial<any>, wallet: string, uri: string, myAssets: any){
         Object.assign(this, user)
         this.walletAddress = wallet
         this.twoFAUri= uri
+        this.myAssets = myAssets
     }
 }
 

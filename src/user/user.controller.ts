@@ -26,11 +26,19 @@ import {
   ApiConsumes,
 } from '@nestjs/swagger';
 import { unlinkSync } from 'fs';
-import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
-import {generateTotpUri} from 'authenticator'
+import {
+  FileFieldsInterceptor,
+  FileInterceptor,
+} from '@nestjs/platform-express';
+import { generateTotpUri } from 'authenticator';
 import { AuthService } from 'src/auth/auth.service';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { MessageResponseDto, Roles, TransactionCurrency, TransactionType } from 'src/utils/types';
+import {
+  MessageResponseDto,
+  Roles,
+  TransactionCurrency,
+  TransactionType,
+} from 'src/utils/types';
 import { UserService } from './user.service';
 import { UtilService } from '../util/util.service';
 import {
@@ -50,6 +58,8 @@ import { CreateWalletDto, SendTransactionDto } from './walletDto';
 import { TransactionService } from 'src/transaction/transaction.service';
 import { Walletservice } from './wallet.service';
 import { CreateOrderDto } from 'src/transaction/transactionDto';
+import { getAssetMetadata, getAssetBalance } from '../web3/asset';
+import { PropertyService } from 'src/property/property.service';
 
 @ApiTags('User')
 @Controller('User')
@@ -60,6 +70,7 @@ export class UserController {
     private readonly utilService: UtilService,
     private readonly transactionService: TransactionService,
     private readonly walletService: Walletservice,
+    private readonly propertyService: PropertyService,
   ) {}
 
   @Post('login')
@@ -88,25 +99,50 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
+    let myAssets = [];
     const user = await this.userService.getUserById(
       req.user.userId,
       true,
       true,
     );
     const walletAddress = user.wallet ? user.wallet.walletAddress : '';
-    let uri = ''
-    if (user.secret){
-      uri = generateTotpUri(user.secret, user.email, 'Blockplot', 'SHA1', 6, 30)
+    let uri = '';
+    if (user.secret) {
+      uri = generateTotpUri(
+        user.secret,
+        user.email,
+        'Blockplot',
+        'SHA1',
+        6,
+        30,
+      );
     }
     if (user.wallet) delete user.wallet;
-    return new UserResponseDto(user, walletAddress, uri);
+    if (user.myAssets && user.myAssets.length > 0) {
+      if (walletAddress) {
+        const assets = await this.propertyService.getPropertiesByTokenIds(
+          user.myAssets,
+        );
+        for (let a of assets) {
+          try {
+            const data = await getAssetMetadata(a.tokenId);
+            myAssets.push({ ...a, metadata: data });
+          } catch (error) {
+            myAssets.push({ ...a, metadata: {name: "Nil", symbol: "Nil", totalSupply: 0, vestingPeriod: 0, costToDollar: 0} });
+          }
+          
+        }
+      }
+    }
+    return new UserResponseDto(user, walletAddress, uri, myAssets);
   }
 
-  @ApiOkResponse({ description: 'Adds new Real estate Company', type: MessageResponseDto })
+  @ApiOkResponse({
+    description: 'Adds new Real estate Company',
+    type: MessageResponseDto,
+  })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
-  @UseInterceptors(
-    FileInterceptor('document'),
-  )
+  @UseInterceptors(FileInterceptor('document'))
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {
@@ -129,14 +165,14 @@ export class UserController {
           type: 'string',
         },
         password: {
-          type: 'string'
+          type: 'string',
         },
         role: {
           type: 'string',
         },
         custom: {
           type: 'boolean',
-        }
+        },
       },
     },
     // description: 'Files',
@@ -145,10 +181,10 @@ export class UserController {
   @Post('register-real-estate')
   async registerRealEstate(
     @UploadedFile()
-    file : Express.Multer.File,
+    file: Express.Multer.File,
     @Body() createUserDto: CreateUserDto,
   ) {
-      return await this.userService.createUser(createUserDto, file)
+    return await this.userService.createUser(createUserDto, file);
   }
 
   @ApiBearerAuth()
@@ -173,7 +209,7 @@ export class UserController {
         document_url: {
           type: 'string',
           format: 'binary',
-        }
+        },
       },
     },
     // description: 'Files',
@@ -219,8 +255,14 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @UseGuards(JwtAuthGuard)
   @Patch('/change-password')
-  async changepassword(@Body() changePasswordDto: ChangePasswordDto, @Request() req: any) {
-    return await this.userService.changePassword(changePasswordDto.newPassword, req.user.userId)
+  async changepassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Request() req: any,
+  ) {
+    return await this.userService.changePassword(
+      changePasswordDto.newPassword,
+      req.user.userId,
+    );
   }
 
   @ApiOkResponse({ description: 'Password Changed!', type: MessageResponseDto })
@@ -239,8 +281,11 @@ export class UserController {
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @UseGuards(JwtAuthGuard)
   @Post('/enable-2fa/')
-  async enabled2Fa(@Body() enable2FaDto: Enable2FaDto, @Request() req: any,) {
-    return await this.userService.enable2Fa(req.user.userId, enable2FaDto.token)
+  async enabled2Fa(@Body() enable2FaDto: Enable2FaDto, @Request() req: any) {
+    return await this.userService.enable2Fa(
+      req.user.userId,
+      enable2FaDto.token,
+    );
   }
 
   @ApiBearerAuth()
@@ -253,8 +298,6 @@ export class UserController {
     await this.userService.addBank(req.user.userId, addBankDto);
     return new MessageResponseDto('Success', 'Bank Successfully Added!');
   }
-
-  
 
   @ApiBearerAuth()
   @ApiOkResponse({
@@ -291,23 +334,61 @@ export class UserController {
     contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
     @Query('function') contractFunction: string,
   ) {
-    const user = await this.userService.getUserById(req.user.userId, false, true);
+    const user = await this.userService.getUserById(
+      req.user.userId,
+      false,
+      true,
+    );
     if (!user)
       throw new UnauthorizedException({
         message: 'Sorry you are not unauthorised',
       });
-    // if (!user.isVerified) throw new UnauthorizedException({message: "you have'nt to completed your Kyc"})
+    if (!user.isVerified)
+      throw new UnauthorizedException({
+        message: "you have'nt to completed your Kyc",
+      });
+    if (!user.wallet)
+      throw new UnauthorizedException({
+        message: "you don't have a wallet yet",
+      });
     const transaction = await this.walletService.sendWalletTransaction(
       user.wallet,
       sendTransactionDto.password,
       sendTransactionDto.params,
       contract,
       contractFunction,
-      sendTransactionDto.to
+      sendTransactionDto.to,
     );
-    
-    await this.transactionService.createTransaction(user.userId, transaction.createTransactionDto, true, transaction.reference)
-    return new MessageResponseDto('Success', `Transaction Successful. Here is your transaction hash ${transaction.reference}`)
+    if (contractFunction === 'buyAsset') {
+      this.userService.addUserAsset(
+        req.user.userId,
+        sendTransactionDto.params[1],
+      );
+    }
+
+    if (contractFunction === 'sellAsset') {
+      const amount = await getAssetBalance(
+        sendTransactionDto.params[1],
+        user.wallet.walletAddress,
+      );
+      if (amount === undefined) {
+        
+      }
+      if (amount <= 0) {
+        this.userService.removeUserAsset(
+          user.userId,
+          sendTransactionDto.params[1],
+        );
+      }
+    }
+
+    await this.transactionService.createTransaction(
+      user.userId,
+      transaction.createTransactionDto,
+      true,
+      transaction.reference,
+    );
+    return new MessageResponseDto('Success', `Transaction Successful`);
   }
 
   // @ApiBearerAuth()
@@ -340,17 +421,34 @@ export class UserController {
     @Query('isActive') isActive: boolean,
     @Query('isVerified') isVerified: boolean,
   ) {
-    if (req.user.username !== Roles.ADMIN && req.user.username !== Roles.SUPER_ADMIN)
+    if (
+      req.user.username !== Roles.ADMIN &&
+      req.user.username !== Roles.SUPER_ADMIN
+    )
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
       });
-    const users = await this.userService.getAllUsers(req.user.userId, isActive, isVerified);
-    return users.map((u) => {
+    const users = await this.userService.getAllUsers(
+      req.user.userId,
+      isActive,
+      isVerified,
+    );
+    return users.map(async (u) => {
+      let myAssets = [];
       const walletAddress = u.wallet ? u.wallet.walletAddress : '';
       if (u.wallet) delete u.wallet;
-      if (u.secret)  delete u.secret
+      if (u.secret) delete u.secret;
+      if (u.myAssets && u.myAssets.length > 0) {
+        const assets = await this.propertyService.getPropertiesByTokenIds(
+          u.myAssets,
+        );
+        for (let a of assets) {
+          const data = await getAssetMetadata(a.tokenId);
+          myAssets.push({ ...a, metadata: data });
+        }
+      }
       // delete u.password
-      return new UserResponseDto(u, walletAddress, '')
+      return new UserResponseDto(u, walletAddress, '', myAssets);
     });
   }
 
@@ -367,7 +465,10 @@ export class UserController {
     @Request() req: any,
     @Body() verifyUserDto: VerifyUserDto,
   ) {
-    if (req.user.username !== Roles.ADMIN && req.user.username !== Roles.SUPER_ADMIN)
+    if (
+      req.user.username !== Roles.ADMIN &&
+      req.user.username !== Roles.SUPER_ADMIN
+    )
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
       });
@@ -375,7 +476,7 @@ export class UserController {
       verifyUserDto.userIds.length === 1
         ? verifyUserDto.userIds[0]
         : verifyUserDto.userIds,
-        req.user.userId
+      req.user.userId,
     );
   }
 }

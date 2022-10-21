@@ -57,6 +57,10 @@ import { Wallet } from './wallet.entity';
     @OneToMany(() => Bank, (bank) => bank.user)
     banks: Bank[]
 
+    @Column({type: 'simple-array', nullable: true})
+    myAssets: number[]
+    
+
     @OneToMany(() => Transaction, (transaction) => transaction.user)
     orders: Transaction[]
 
