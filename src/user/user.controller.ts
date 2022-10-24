@@ -391,22 +391,6 @@ export class UserController {
     return new MessageResponseDto('Success', `Transaction Successful`);
   }
 
-  // @ApiBearerAuth()
-  // @ApiOkResponse({
-  //   description: 'User creates wallet',
-  //   type: MessageResponseDto,
-  // })
-  // @ApiBadRequestResponse({ description: 'Something went wrong' })
-  // @ApiUnauthorizedResponse({ description: 'Not authorised' })
-  // @UseGuards(JwtAuthGuard)
-  // @Put('wallet/create')
-  // async createUserWallet(
-  //   @Request() req: any,
-  //   @Body() createWalletDto: CreateWalletDto,
-  // ) {
-  //   return await this.userService.createWallet(req.user.userId, createWalletDto.passcode)
-  // }
-
   @ApiBearerAuth()
   @ApiOkResponse({
     description: 'Admin gets all users',

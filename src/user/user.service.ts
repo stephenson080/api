@@ -78,6 +78,25 @@ export class UserService {
             message: 'Your wallet address is required',
           });
         wallet = await this.walletService.customWallet(user.walletAddress);
+        const newPerson = await this.personService.createPerson(
+          {
+            phone: user.phone,
+            fullName: user.fullName,
+          },
+          upload ? upload.url : undefined,
+        );
+        const newUser = this.userRepo.create({
+          email: user.email,
+          password: passwordHash,
+          secret: secret.replace(' ', ''),
+          role: user.role ? user.role : Roles.USER,
+          wallet,
+        });
+        await this.userRepo.save({
+          ...newUser,
+          person: newPerson,
+        });
+        return new MessageResponseDto('Success', 'Resistration Success');
       }
 
       const newPerson = await this.personService.createPerson(
@@ -95,10 +114,13 @@ export class UserService {
         role: user.role ? user.role : Roles.USER,
         wallet,
       });
-      await this.userRepo.save({
+      const userObj = await this.userRepo.save({
         ...newUser,
         person: newPerson,
       });
+
+     await this.createWallet(userObj.userId, user.password)
+      
 
       // this.utilService.sendMail(
       //   user.email,
@@ -118,7 +140,7 @@ export class UserService {
           }
         });
       }
-      return new MessageResponseDto('Error', error.message);
+      throw new UnprocessableEntityException({message: error.message})
     }
   }
 
@@ -279,13 +301,13 @@ export class UserService {
       const code = token.split('-')[0];
       await this.editUser(person.personId, { token: code });
 
-      console.log(code);
+      // console.log(code);
 
-      // this.utilService.sendMail(
-      //   user.email,
-      //   'Reset Password',
-      //   `We received a request to reset your password. Click the click below to reset password. Your code is: ${code}`,
-      // );
+      this.utilService.sendMail(
+        user.email,
+        'Reset Password',
+        `We received a request to reset your password. Click the click below to reset password. Your code is: ${code}`,
+      );
       return new MessageResponseDto('Success', 'Email Sent');
     } catch (error) {
       throw error;
@@ -436,6 +458,7 @@ export class UserService {
       throw new UnauthorizedException({
         message: 'You are not unthorised to use this service',
       });
+    if (!user.isVerified) throw new BadRequestException({message: "please Complete your KYC before you can use this service"})
     const bank = this.bankRepo.create(addBankDto);
     const newBank = await this.bankRepo.save(bank);
     await this.userRepo.save({
