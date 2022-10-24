@@ -417,22 +417,13 @@ export class UserController {
       isActive,
       isVerified,
     );
-    return users.map(async (u) => {
-      let myAssets = [];
+    return users.map((u) => {
       const walletAddress = u.wallet ? u.wallet.walletAddress : '';
       if (u.wallet) delete u.wallet;
       if (u.secret) delete u.secret;
-      if (u.myAssets && u.myAssets.length > 0) {
-        const assets = await this.propertyService.getPropertiesByTokenIds(
-          u.myAssets,
-        );
-        for (let a of assets) {
-          const data = await getAssetMetadata(a.tokenId);
-          myAssets.push({ ...a, metadata: data });
-        }
-      }
+     
       // delete u.password
-      return new UserResponseDto(u, walletAddress, '', myAssets);
+      return new UserResponseDto(u, walletAddress, '', []);
     });
   }
 
