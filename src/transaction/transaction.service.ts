@@ -48,10 +48,15 @@ export class TransactionService {
       throw new UnauthorizedException({
         message: 'You are not Authorised to use this service',
       });
-    if (user.banks.length <= 0)
-      throw new BadRequestException({
-        message: 'Please add a bank before you can make an order',
-      });
+
+    if (!user.isVerified)
+    throw new BadRequestException({
+      message: 'Please Complete your Kyc before you can use this Service',
+    });
+    // if (user.banks.length <= 0)
+    //   throw new BadRequestException({
+    //     message: 'Please add a bank before you can make an order',
+    //   });
 
     // if (!user.isVerified)
     //   throw new BadRequestException({
