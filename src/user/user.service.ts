@@ -238,11 +238,7 @@ export class UserService {
         imageUrl: filePublicIds[1].url,
         documentUrl: filePublicIds[0].url,
       });
-      await this.userRepo.save({
-        ...user,
-        isVerified: true,
-        updatedAt: new Date(),
-      });
+      
       return new MessageResponseDto(
         'Success',
         `Documents Upload Successful, Please wait, while we verify your details`,

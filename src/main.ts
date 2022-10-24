@@ -1,6 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { join } from 'path';
 // import {NestExpressApplication} from '@nestjs/platform-express'
 import { ValidationPipe } from '@nestjs/common';
 import {
@@ -37,7 +36,7 @@ async function bootstrap() {
   };
 
   const swaggerCustomOptions : SwaggerCustomOptions = {
-    customSiteTitle: 'Blokplot Api',
+    customSiteTitle: 'Blockplot Api',
     swaggerOptions: {
       persistAuthorization: true,
     }

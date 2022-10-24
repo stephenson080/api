@@ -167,8 +167,8 @@ export class Web3Wallet {
     contractAddress: string,
     value?: string
   ) {
-
-    const wallet = walletInstance.connect(polygonRPCProvider);
+    try {
+      const wallet = walletInstance.connect(polygonRPCProvider);
 
     const nonce = await wallet.getTransactionCount();
 
@@ -232,5 +232,9 @@ export class Web3Wallet {
       
       throw err
     }
+    } catch (error) {
+      throw new Error('Something went wrong!, Please Try Again. If it persists contact support')
+    }
+    
   }
 }
