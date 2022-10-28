@@ -20,10 +20,12 @@ import { TransactionService } from 'src/transaction/transaction.service';
 import { Property } from 'src/models/property.entity';
 import { PropertyService } from 'src/property/property.service';
 import { PropertyDetail } from 'src/models/propertyDetail.entity';
+import { NotificationService } from 'src/notification/notification.service';
+import { Notification } from 'src/models/notifications.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Person, Wallet, Transaction, Bank, Property, PropertyDetail]),
+    TypeOrmModule.forFeature([User, Person, Wallet, Transaction, Bank, Property, PropertyDetail, Notification]),
     PersonModule,
     JwtModule,
     // TransactionModule,
@@ -37,7 +39,8 @@ import { PropertyDetail } from 'src/models/propertyDetail.entity';
     UtilService,
     Walletservice,
     TransactionService,
-    PropertyService
+    PropertyService,
+    NotificationService
   ],
   exports: [UserService, Walletservice,  ],
 })

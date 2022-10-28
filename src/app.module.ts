@@ -15,7 +15,8 @@ import { Wallet } from './models/wallet.entity';
 import { Bank } from './models/bank.entity';
 import { Transaction } from './models/transaction.entity';
 import { TransactionModule } from './transaction/transaction.module';
-
+import { NotificationModule } from './notification/notification.module';
+import { Notification } from './models/notifications.entity';
 
 
 // production Connection
@@ -25,7 +26,7 @@ import { TransactionModule } from './transaction/transaction.module';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction],
+      entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
       synchronize: true,
       ssl: {
         rejectUnauthorized: false,
@@ -35,6 +36,7 @@ import { TransactionModule } from './transaction/transaction.module';
     UtilModule,
     PropertyModule,
      TransactionModule,
+     NotificationModule
   ],
   controllers: [],
   providers: [
@@ -59,7 +61,7 @@ import { TransactionModule } from './transaction/transaction.module';
 //         username: configService.get('DB_USERNAME'),
 //         password: configService.get('DB_PASSWORD'),
 //         database: configService.get('DB_NAME'),
-//         entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction],
+//         entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
 //         synchronize: true
 //       }),
 //       inject: [ConfigService],
@@ -68,6 +70,7 @@ import { TransactionModule } from './transaction/transaction.module';
 //     UtilModule,
 //     PropertyModule,
 //     TransactionModule,
+//     NotificationModule,
 
 //   ],
 //   controllers: [],
