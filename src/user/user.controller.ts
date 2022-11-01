@@ -61,7 +61,10 @@ import { CreateOrderDto } from 'src/transaction/transactionDto';
 import { getAssetMetadata, getAssetBalance } from '../web3/asset';
 import { PropertyService } from 'src/property/property.service';
 import { NotificationService } from 'src/notification/notification.service';
-import { NotificationResponseDto } from 'src/notification/notificationDto';
+import {
+  EditNotificationDto,
+  NotificationResponseDto,
+} from 'src/notification/notificationDto';
 
 @ApiTags('User')
 @Controller('User')
@@ -131,9 +134,17 @@ export class UserController {
             const data = await getAssetMetadata(a.tokenId);
             myAssets.push({ ...a, metadata: data });
           } catch (error) {
-            myAssets.push({ ...a, metadata: {name: "Nil", symbol: "Nil", totalSupply: 0, vestingPeriod: 0, costToDollar: 0} });
+            myAssets.push({
+              ...a,
+              metadata: {
+                name: 'Nil',
+                symbol: 'Nil',
+                totalSupply: 0,
+                vestingPeriod: 0,
+                costToDollar: 0,
+              },
+            });
           }
-          
         }
       }
     }
@@ -292,18 +303,51 @@ export class UserController {
   }
 
   @ApiBearerAuth()
-  @ApiOkResponse({ description: '2FA enabled!', type: MessageResponseDto })
+  @ApiOkResponse({
+    description: 'Gets user notifications',
+    type: [NotificationResponseDto],
+  })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @UseGuards(JwtAuthGuard)
   @Get('/notification/get')
   async getUserNotifications(@Request() req: any) {
-    const notifications = await this.notificationService.getUsersNotifications(req.user.userId);
+    const notifications = await this.notificationService.getUsersNotifications(
+      req.user.userId,
+    );
     return notifications.sort((n1, n2) => {
-      if(new Date(n1.updatedAt) > new Date(n2.updatedAt)){
-        return -1
+      if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
+        return -1;
       }
-      return 1}).map(n => new NotificationResponseDto(n))
+      return 1;
+    });
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    description: 'Edit Notifications',
+    type: [NotificationResponseDto],
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Post('/notification/edit')
+  async editNotification(
+    @Request() req: any,
+    @Body() editNotificationDto: EditNotificationDto,
+  ) {
+    for (let id of editNotificationDto.ids) {
+      await this.notificationService.editNotification(id, { isSeen: true });
+    }
+    const notifications = await this.notificationService.getUsersNotifications(
+      req.user.userId,
+    );
+    return notifications.sort((n1, n2) => {
+      if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
+        return -1;
+      }
+      return 1;
+    });
   }
 
   @ApiBearerAuth()
@@ -314,17 +358,23 @@ export class UserController {
   @Post('bank/add-bank')
   async addUserBank(@Body() addBankDto: AddBankDto, @Request() req: any) {
     await this.userService.addBank(req.user.userId, addBankDto);
-    await this.notificationService.createNotification(req.user.userId, {title: 'Bank Added', body: 'You just added a Bank'})
-    const notifications = await this.notificationService.getUsersNotifications(req.user.userId)
+    await this.notificationService.createNotification(req.user.userId, {
+      title: 'Bank Added',
+      body: 'You just added a Bank',
+    });
+    const notifications = await this.notificationService.getUsersNotifications(
+      req.user.userId,
+    );
     const msg = new MessageResponseDto('Success', `Transaction Successful`);
     return {
       message: msg,
       notifications: notifications.sort((n1, n2) => {
-        if(new Date(n1.updatedAt) > new Date(n2.updatedAt)){
-          return -1
+        if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
+          return -1;
         }
-        return 1})
-    }
+        return 1;
+      }),
+    };
   }
 
   @ApiBearerAuth()
@@ -392,7 +442,10 @@ export class UserController {
         req.user.userId,
         sendTransactionDto.params[1],
       );
-      this.notificationService.createNotification(req.user.userId, {title: 'Asset Purchase Successful', body: 'You just purchased an Asset. Check out the My Asset to view the transaction details'})
+      this.notificationService.createNotification(req.user.userId, {
+        title: 'Asset Purchase Successful',
+        body: 'You just purchased an Asset. Check out the My Asset to view the transaction details',
+      });
     }
 
     if (contractFunction === 'sellAsset') {
@@ -401,7 +454,6 @@ export class UserController {
         user.wallet.walletAddress,
       );
       if (amount === undefined) {
-        
       }
       if (amount <= 0) {
         this.userService.removeUserAsset(
@@ -409,25 +461,38 @@ export class UserController {
           sendTransactionDto.params[1],
         );
       }
-      this.notificationService.createNotification(req.user.userId, {title: 'Asset Sale Successful', body: 'You just Sold an Asset. Check out the My Asset to view the transaction details'})
+      this.notificationService.createNotification(req.user.userId, {
+        title: 'Asset Sale Successful',
+        body: 'You just Sold an Asset. Check out the My Asset to view the transaction details',
+      });
     }
-    await this.notificationService.createNotification(req.user.userId, {title: 'Token Transfer Successful', body: 'You just transferred your tokens. Check out the Wallet Screen to view the transaction details'})
+
+    if (contractFunction === 'transfer') {
+      await this.notificationService.createNotification(req.user.userId, {
+        title: 'Token Transfer Successful',
+        body: 'You just transferred your tokens. Check out the Wallet Screen to view the transaction details',
+      });
+    }
+
     await this.transactionService.createTransaction(
       user.userId,
       transaction.createTransactionDto,
       true,
       transaction.reference,
     );
-    const notifications = await this.notificationService.getUsersNotifications(req.user.userId)
+    const notifications = await this.notificationService.getUsersNotifications(
+      req.user.userId,
+    );
     const msg = new MessageResponseDto('Success', `Transaction Successful`);
     return {
       message: msg,
       notifications: notifications.sort((n1, n2) => {
-        if(new Date(n1.updatedAt) > new Date(n2.updatedAt)){
-          return -1
+        if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
+          return -1;
         }
-        return 1})
-    }
+        return 1;
+      }),
+    };
   }
 
   @ApiBearerAuth()
@@ -460,7 +525,7 @@ export class UserController {
       const walletAddress = u.wallet ? u.wallet.walletAddress : '';
       if (u.wallet) delete u.wallet;
       if (u.secret) delete u.secret;
-     
+
       // delete u.password
       return new UserResponseDto(u, walletAddress, '', []);
     });

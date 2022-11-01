@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from 'src/models/notifications.entity';
 import { UserService } from 'src/user/user.service';
@@ -23,5 +23,11 @@ export class NotificationService {
 
   async getUsersNotifications(userId: string){
     return await this.notificationRepo.find({where: {user: {userId}}})
+  }
+
+  async editNotification(notificationId: string, editNotificationDto: any){
+    const notification = await this.notificationRepo.findOneBy({notificationId})
+    if (!notification) throw new BadRequestException({message: 'Something went wrong'})
+    await this.notificationRepo.save({...notification, ...editNotificationDto})
   }
 }
