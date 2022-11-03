@@ -35,6 +35,16 @@ export class PropertyDetail{
     })
     landSize :number
 
+    @Column({
+        type: 'decimal', nullable: true
+    })
+    latitude :number
+
+    @Column({
+        type: 'decimal', nullable: true
+    })
+    longitude :number
+
     @Column({type: 'simple-array', nullable: true})
     images: string[]
 

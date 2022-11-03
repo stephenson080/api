@@ -7,11 +7,13 @@ import { TransactionService } from './transaction.service';
 import {UserModule} from '../user/user.module'
 import { UtilModule } from 'src/util/util.module';
 import { ConfigService } from '@nestjs/config';
+import { NotificationService } from 'src/notification/notification.service';
+import { Notification } from 'src/models/notifications.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, User]), UserModule, UtilModule],
+  imports: [TypeOrmModule.forFeature([Transaction, User, Notification]), UserModule, UtilModule],
   controllers: [TransactionController],
-  providers: [TransactionService, ConfigService],
+  providers: [TransactionService, ConfigService, NotificationService],
   exports: [TransactionService]
 })
 export class TransactionModule {}

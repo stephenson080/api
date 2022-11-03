@@ -63,6 +63,12 @@ export class PropertyResponseDto {
     @ApiProperty({type: Number})
     APY: number
 
+    @ApiProperty({type: Number})
+    latitude: number
+
+    @ApiProperty({type: Number})
+    longitude: number
+
     @ApiProperty({type: Boolean})
     isListed: boolean
 
