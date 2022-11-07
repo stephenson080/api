@@ -49,6 +49,9 @@ export class UserResponseDto {
     @ApiProperty({type: Boolean})
     isVerified:boolean
 
+    @ApiProperty({type: Boolean})
+    fundWallet: boolean
+
     @Exclude()
     isActive: boolean
 

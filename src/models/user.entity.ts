@@ -39,6 +39,9 @@ import { Wallet } from './wallet.entity';
     @Column({ type: 'boolean', default: false })
     isVerified: boolean;
 
+    @Column({ type: 'boolean', default: false })
+    fundWallet: boolean
+
     @Column({ nullable: true})
     token: string
 

@@ -52,19 +52,13 @@ export class TransactionService {
       });
 
     if (!user.isVerified)
-    throw new BadRequestException({
-      message: 'Please Complete your Kyc before you can use this Service',
-    });
+      throw new BadRequestException({
+        message: 'Please Complete your Kyc before you can use this Service',
+      });
     // if (user.banks.length <= 0)
     //   throw new BadRequestException({
     //     message: 'Please add a bank before you can make an order',
     //   });
-
-    if (!user.isVerified)
-      throw new BadRequestException({
-        message: "You can't make an order unless a complete your Kyc",
-      });
-
     let order: Transaction;
     if (!crypto) {
       // const bank = user.banks.find((b) => b.bankId === createOrderDto.bankId);
@@ -118,11 +112,14 @@ export class TransactionService {
           'transfer',
           existTrx.tokenAddress,
         );
-        await this.notificationService.createNotification(user.userId, {body: 'You just purchased a Cryptocurrency. Check out the wallet screen to view the transaction details', title: 'Cryptocurrency Purchase Succeefully'})
+        await this.notificationService.createNotification(user.userId, {
+          body: 'You just successfully funded your wallet. Check out the wallet screen to view the transaction details',
+          title: 'Wallet Funding Successful',
+        });
         await this.editTransaction(existTrx.orderId, { isVerified: true });
-        const notifications = await this.notificationService.getUsersNotifications(
-          user.userId,
-        );
+        this.userService.editUser(user.userId, {fundWallet: true})
+        const notifications =
+          await this.notificationService.getUsersNotifications(user.userId);
         const msg = new MessageResponseDto('Success', `Transaction Successful`);
         return {
           message: msg,
@@ -134,7 +131,9 @@ export class TransactionService {
           }),
         };
       }
-      throw new UnprocessableEntityException({message: 'Could not Verify Payment'});
+      throw new UnprocessableEntityException({
+        message: 'Could not Verify Payment',
+      });
     }
 
     const data = await this.utilService.verifyPaystackPayment(
@@ -156,23 +155,41 @@ export class TransactionService {
         'transfer',
         existTrx.tokenAddress,
       );
+      await this.notificationService.createNotification(user.userId, {
+        body: 'You just successfully funded your wallet. Check out the wallet screen to view the transaction details',
+        title: 'Wallet Funding Successful',
+      });
       await this.editTransaction(existTrx.orderId, { isVerified: true });
-      return new MessageResponseDto('Success', 'Funding Succesful');
+      this.userService.editUser(user.userId, {fundWallet: true})
+      const notifications =
+        await this.notificationService.getUsersNotifications(user.userId);
+      const msg = new MessageResponseDto('Success', `Transaction Successful`);
+      return {
+        message: msg,
+        notifications: notifications.sort((n1, n2) => {
+          if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
+            return -1;
+          }
+          return 1;
+        }),
+      };
     }
-    return new MessageResponseDto('Error', data.message);
+    throw new UnprocessableEntityException({
+      message: 'Could not Verify Payment',
+    });
   }
 
   async getUsersTransactions(userId: string, isVerified?: boolean) {
     return await this.transactionRepo.find({
       relations: { bank: true },
-      where: { isVerified, user: {userId}},
+      where: { isVerified, user: { userId } },
     });
   }
 
   async getAllTransaction(isVerified?: boolean) {
     return await this.transactionRepo.find({
-      relations: { user: true, bank: true},
-      where: { isVerified, },
+      relations: { user: true, bank: true },
+      where: { isVerified },
     });
   }
 
