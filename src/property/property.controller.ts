@@ -235,6 +235,38 @@ export class PropertyController {
 
   @ApiBearerAuth()
   @ApiOkResponse({
+    description: 'Admin gets all properties that are listed or not listed',
+    type: [PropertyResponseDto],
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @UseGuards(JwtAuthGuard)
+  @Get('admin/get-property/:propertyId')
+  async getPropertyById(
+    @Param('propertyId', ParseUUIDPipe) propertyId: string,
+    @Request() req: any,
+  ) {
+    if (
+      req.user.username !== Roles.ADMIN &&
+      req.user.username !== Roles.SUPER_ADMIN
+    )
+      throw new UnauthorizedException({
+        message: 'you are not authorised to use this service',
+      });
+    const property = await this.propertyService.getPerperty(
+      undefined,
+      undefined,
+      propertyId,
+    );
+    let metadata = {};
+    if (property.tokenId >= 0 && property.isListed) {
+      metadata = await getAssetMetadata(property.tokenId);
+    }
+    return new PropertyResponseDto(property, metadata);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
     description: "Admin after review property mint's token for property",
     type: MessageResponseDto,
   })

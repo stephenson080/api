@@ -43,7 +43,6 @@ export class UserResponseDto {
     person: PersonResponseDto
 
     @ApiProperty({type: String, enum: Roles})
-    @Exclude()
     role: Roles
 
     @ApiProperty({type: Boolean})
@@ -64,7 +63,7 @@ export class UserResponseDto {
     @ApiProperty({type: String})
     secret:string
 
-    @Exclude()
+    @ApiProperty({type: String})
     createdAt: Date
 
     @Exclude()

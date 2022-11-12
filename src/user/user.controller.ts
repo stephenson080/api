@@ -530,6 +530,26 @@ export class UserController {
       return new UserResponseDto(u, walletAddress, '', []);
     });
   }
+  @ApiBearerAuth()
+  @ApiOkResponse({
+    description: 'Gets user notifications',
+    type: UserResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Get('/admin/get-user/:userId')
+  async getUserById(@Request() req: any, @Param('userId', ParseUUIDPipe) userId: string) {
+    if (
+      req.user.username !== Roles.ADMIN &&
+      req.user.username !== Roles.SUPER_ADMIN
+    )
+      throw new UnauthorizedException({
+        message: 'you are not authorised to use this service',
+      });
+    const user = await this.userService.getUserById(userId, true, true)
+    return new UserResponseDto(user, user.wallet ? user.wallet.walletAddress : '', '', [])
+  }
 
   @ApiBearerAuth()
   @ApiOkResponse({

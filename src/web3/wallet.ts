@@ -233,6 +233,7 @@ export class Web3Wallet {
       throw err
     }
     } catch (error) {
+      console.log(error)
       throw new Error('Something went wrong!, Please Try Again. If it persists contact support')
     }
     
