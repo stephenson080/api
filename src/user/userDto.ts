@@ -51,7 +51,7 @@ export class UserResponseDto {
     @ApiProperty({type: Boolean})
     fundWallet: boolean
 
-    @Exclude()
+    @ApiProperty({type: String})
     isActive: boolean
 
     @Exclude()

@@ -104,18 +104,9 @@ export class PropertyResponseDto {
 }
 
 export class ListPropertyDto {
-    @ApiProperty({type: Number})
-    @IsNumber()
-    @IsNotEmpty()
-    tokenPrice: number
 
     @ApiProperty({type: Number})
     @IsNumber()
     @IsNotEmpty()
     tokenId: number
-
-    @ApiProperty({type: Number})
-    @IsNumber()
-    @IsNotEmpty()
-    APY: number
 }

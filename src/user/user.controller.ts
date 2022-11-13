@@ -553,6 +553,27 @@ export class UserController {
 
   @ApiBearerAuth()
   @ApiOkResponse({
+    description: 'Activate and Deactivate user account',
+    type: MessageResponseDto,
+  })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Post('/admin/activate-deactivate-user/:userId')
+  async activateDeactivateAccount(@Request() req: any, @Param('userId', ParseUUIDPipe) userId: string) {
+    if (
+      req.user.username !== Roles.ADMIN &&
+      req.user.username !== Roles.SUPER_ADMIN
+    )
+      throw new UnauthorizedException({
+        message: 'you are not authorised to use this service',
+      });
+    await this.userService.deactivateActivateUser(userId)
+    return new MessageResponseDto('Success', 'Operation Successful')
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({
     description: 'Admin Verifies Users or User',
     type: MessageResponseDto,
   })

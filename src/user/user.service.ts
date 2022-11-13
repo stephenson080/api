@@ -385,9 +385,9 @@ export class UserService {
   }
 
   //admin services
-  async deactivateUser(userId: string) {
-    // todo: make some smart contract calls
-    await this.editUser(userId, { isActive: false });
+  async deactivateActivateUser(userId: string) {
+    const user = await this.userRepo.findOneBy({userId})
+    await this.editUser(userId, { isActive: !user.isActive });
   }
 
   async getAllUsers(userId: string, isActive?: boolean, isVerified?: boolean) {
