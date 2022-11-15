@@ -235,7 +235,7 @@ export class PropertyController {
 
   @ApiBearerAuth()
   @ApiOkResponse({
-    description: 'Admin gets all properties that are listed or not listed',
+    description: 'gets property by Id',
     type: [PropertyResponseDto],
   })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
@@ -248,7 +248,7 @@ export class PropertyController {
   ) {
     if (
       req.user.username !== Roles.ADMIN &&
-      req.user.username !== Roles.SUPER_ADMIN
+      req.user.username !== Roles.SUPER_ADMIN && req.user.username !== Roles.AGENT
     )
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
