@@ -51,6 +51,9 @@ export class UserResponseDto {
     @ApiProperty({type: Boolean})
     fundWallet: boolean
 
+    @ApiProperty({type: Boolean})
+    faEnabled: boolean
+
     @ApiProperty({type: String})
     isActive: boolean
 
