@@ -83,7 +83,7 @@ export class UserService {
             phone: user.phone,
             fullName: user.fullName,
           },
-          upload ? upload.url : undefined,
+          upload ? [upload.url] : undefined,
         );
         const newUser = this.userRepo.create({
           email: user.email,
@@ -92,11 +92,10 @@ export class UserService {
           role: user.role ? user.role : Roles.USER,
           wallet,
         });
-        await this.userRepo.save({
+        return await this.userRepo.save({
           ...newUser,
           person: newPerson,
         });
-        return new MessageResponseDto('Success', 'Resistration Success');
       }
 
       const newPerson = await this.personService.createPerson(
@@ -104,7 +103,7 @@ export class UserService {
           phone: user.phone,
           fullName: user.fullName,
         },
-        upload ? upload.url : undefined,
+        upload ? [upload.url] : undefined,
       );
 
       const newUser = this.userRepo.create({
@@ -119,16 +118,15 @@ export class UserService {
         person: newPerson,
       });
 
-     await this.createWallet(userObj.userId, user.password)
-      
+      await this.createWallet(userObj.userId, user.password);
 
-      // this.utilService.sendMail(
-      //   user.email,
-      //   'Welcome to Blockplot, your fractional real estate platform',
-      //   `Hello, ${user.fullName} your Registation was Successful`,
-      // );
+      this.utilService.sendMail(
+        user.email,
+        'Welcome to Blockplot, your fractional real estate platform',
+        `Hello, ${user.fullName} your Registation was Successful`,
+      );
 
-      return new MessageResponseDto('Success', 'Resistration Success');
+      return userObj;
     } catch (error) {
       if (upload) {
         await this.utilService.deleteFileFromCloudinary(upload.public_id);
@@ -140,7 +138,71 @@ export class UserService {
           }
         });
       }
-      throw new UnprocessableEntityException({message: error.message})
+      throw new UnprocessableEntityException({ message: error.message });
+    }
+  }
+
+  async nonCustodialUserKyc(
+    newUser: CreateUserDto,
+    files: { path: string; type: string }[],
+  ) {
+    let filePublicIds: { public_id: string; url: string }[] = [];
+    try {
+      let wallet: Wallet;
+      const existUser = await this.getUserByEmail(newUser.email);
+      if (existUser)
+        throw new Error(`An Account with Username ${newUser.email} Already exist`);
+      const existPerson = await this.personService.getPerson(newUser.phone);
+      if (existPerson)
+        throw new Error(
+          `An Account with Phone Number ${newUser.phone} Already exist`,
+        );
+      wallet = await this.walletService.getwallet(
+        undefined,
+        newUser.walletAddress,
+      );
+      if (wallet) {
+        throw new Error('Wallet Already Exist');
+      }
+      wallet = await this.walletService.customWallet(newUser.walletAddress);
+
+      for (let file of files) {
+        try {
+          const upload = await this.utilService.uploadFileToCloudinary(file);
+          filePublicIds.push({ public_id: upload.public_id, url: upload.url });
+        } catch (error) {
+          throw error;
+        }
+      }
+
+      const newPerson = await this.personService.createPerson(
+        {
+          phone: newUser.phone,
+          fullName: newUser.fullName,
+        },
+        filePublicIds.map((f) => f.url),
+      );
+
+      const _newUser = this.userRepo.create({
+        email: newUser.email,
+        password: 'qwerty',
+        role: Roles.USER,
+        wallet,
+      });
+
+      await this.userRepo.save({ ..._newUser, person: newPerson });
+
+      return new MessageResponseDto(
+        'Success',
+        'Document Uploaded!!, Please wait while we Verify your Details',
+      );
+    } catch (error) {
+      for (let file of filePublicIds) {
+        if (file.public_id) {
+          await this.utilService.deleteFileFromCloudinary(file.public_id);
+        }
+      }
+      throw new UnprocessableEntityException({ message: error.message });
     }
   }
 
@@ -184,7 +246,7 @@ export class UserService {
       return;
     }
     newAssetArray = [...user.myAssets];
-    newAssetArray.push(tokenId)
+    newAssetArray.push(tokenId);
 
     this.editUser(user.userId, { myAssets: newAssetArray });
   }
@@ -192,8 +254,8 @@ export class UserService {
   async removeUserAsset(userId: string, tokenId: number) {
     const user = await this.getUserById(userId);
     let newAssetArray: number[] = [];
-    
-    newAssetArray= user.myAssets.filter(a => a != tokenId)
+
+    newAssetArray = user.myAssets.filter((a) => a != tokenId);
 
     this.editUser(user.userId, { myAssets: newAssetArray });
   }
@@ -238,7 +300,7 @@ export class UserService {
         imageUrl: filePublicIds[1].url,
         documentUrl: filePublicIds[0].url,
       });
-      
+
       return new MessageResponseDto(
         'Success',
         `Documents Upload Successful, Please wait, while we verify your details`,
@@ -251,7 +313,7 @@ export class UserService {
           await this.utilService.deleteFileFromCloudinary(file.public_id);
         }
       }
-      return new MessageResponseDto('Error', error.message);
+      throw new UnprocessableEntityException({ message: error.message });
     }
   }
 
@@ -386,7 +448,7 @@ export class UserService {
 
   //admin services
   async deactivateActivateUser(userId: string) {
-    const user = await this.userRepo.findOneBy({userId})
+    const user = await this.userRepo.findOneBy({ userId });
     await this.editUser(userId, { isActive: !user.isActive });
   }
 
@@ -454,7 +516,10 @@ export class UserService {
       throw new UnauthorizedException({
         message: 'You are not unthorised to use this service',
       });
-    if (!user.isVerified) throw new BadRequestException({message: "please Complete your KYC before you can use this service"})
+    if (!user.isVerified)
+      throw new BadRequestException({
+        message: 'please Complete your KYC before you can use this service',
+      });
     const bank = this.bankRepo.create(addBankDto);
     const newBank = await this.bankRepo.save(bank);
     await this.userRepo.save({

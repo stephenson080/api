@@ -95,7 +95,8 @@ export class UserController {
   @ApiOkResponse({ description: 'User Created!', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   async addUser(@Body() user: CreateUserDto) {
-    return await this.userService.createUser(user);
+    await this.userService.createUser(user);
+    return new MessageResponseDto('Success', "Registration Success")
   }
 
   @ApiBearerAuth()
@@ -198,7 +199,71 @@ export class UserController {
     file: Express.Multer.File,
     @Body() createUserDto: CreateUserDto,
   ) {
-    return await this.userService.createUser(createUserDto, file);
+    await this.userService.createUser(createUserDto, file);
+    return new MessageResponseDto('Success', 'Registration Success')
+  }
+
+  @ApiOkResponse({
+    description: 'KYC for non Custodial users',
+    type: MessageResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'image_url', maxCount: 1 },
+      { name: 'document_url', maxCount: 1 },
+    ]),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image_url: {
+          type: 'string',
+          format: 'binary',
+        },
+        document_url: {
+          type: 'string',
+          format: 'binary',
+        },
+        fullName: {
+          type: 'string',
+        },
+        email: {
+          type: 'string',
+        },
+        phone: {
+          type: 'string',
+        },
+        walletAddress: {
+          type: 'string',
+        },
+        password: {
+          type: 'string',
+        },
+        role: {
+          type: 'string',
+        },
+        custom: {
+          type: 'boolean',
+        },
+      },
+    },
+    // description: 'Files',
+    // type: FileUploadDto
+  })
+  @Post('non-custodial-kyc')
+  async nonCustodialUserKyc(
+    @UploadedFiles()
+    files: {
+      image_url: Express.Multer.File[];
+      document_url: Express.Multer.File[];
+    },
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    const filesUrls = this.utilService.validateFilesUpload(files);
+    return await this.userService.nonCustodialUserKyc(createUserDto, filesUrls)
   }
 
   @ApiBearerAuth()

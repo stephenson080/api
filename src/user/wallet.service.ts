@@ -21,7 +21,9 @@ export class Walletservice {
   constructor(
     @InjectRepository(Wallet) private readonly walletRepo: Repository<Wallet>,
   ) {}
-
+  async getwallet(id?: string, address?: string){
+    return await this.walletRepo.findOneBy({walletId: id, walletAddress: address})
+  }
   async createWallet(passcode: string) {
     const newWallet = await Web3Wallet.createWallet(passcode);
     const wallet = this.walletRepo.create({
