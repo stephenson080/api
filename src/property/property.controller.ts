@@ -123,14 +123,12 @@ export class PropertyController {
     }
   }
 
-  @ApiBearerAuth()
   @ApiOkResponse({
     description: 'Get Properties that are list or not',
     type: [PropertyResponseDto],
   })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
-  @UseGuards(JwtAuthGuard)
   @Get('get-properties')
   async getProperties(@Query('isListed') isListed: boolean) {
     const mappedProperties: PropertyResponseDto[] = [];
@@ -236,7 +234,7 @@ export class PropertyController {
   @ApiBearerAuth()
   @ApiOkResponse({
     description: 'gets property by Id',
-    type: [PropertyResponseDto],
+    type: PropertyResponseDto,
   })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
@@ -253,6 +251,29 @@ export class PropertyController {
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
       });
+    const property = await this.propertyService.getPerperty(
+      undefined,
+      undefined,
+      propertyId,
+    );
+    let metadata = {};
+    if (property.tokenId >= 0 && property.isListed) {
+      metadata = await getAssetMetadata(property.tokenId);
+    }
+    return new PropertyResponseDto(property, metadata);
+  }
+
+  @ApiOkResponse({
+    description: 'gets property by Id',
+    type: PropertyResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @Get('get-property/:propertyId')
+  async getProperty(
+    @Param('propertyId', ParseUUIDPipe) propertyId: string,
+  ) {
+    
     const property = await this.propertyService.getPerperty(
       undefined,
       undefined,
