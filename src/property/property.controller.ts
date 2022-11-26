@@ -143,6 +143,18 @@ export class PropertyController {
     }
     return mappedProperties;
   }
+  @ApiOkResponse({
+    description: 'Get Property by assetId',
+    type: PropertyResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @Get('get-propertyByAssetId/:assetId')
+  async getPropertybyAssetId(@Param('assetId') assetId: number) {
+    const property = await this.propertyService.getPerperty(undefined, assetId, undefined)
+    if (!property) return undefined
+    const metadata = await getAssetMetadata(property.tokenId);
+    return new PropertyResponseDto(property, metadata)
+  }
 
   @ApiBearerAuth()
   @ApiOkResponse({

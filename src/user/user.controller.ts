@@ -266,6 +266,23 @@ export class UserController {
     return await this.userService.nonCustodialUserKyc(createUserDto, filesUrls)
   }
 
+  @ApiOkResponse({
+    description: 'get non Custodial user',
+    type: UserResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' }) 
+  @Get('get-non-custodial-user/:wallet')
+  async getNonCustodialUser(@Param('wallet') walletAddress: string
+  ) {
+    const user = await this.userService.getUserByWallet(walletAddress)
+    if (!user){
+      return undefined
+    }
+    const address = user.wallet ? user.wallet.walletAddress : '';
+    if (user.wallet) delete user.wallet
+    return new UserResponseDto(user, address, '', [])
+  }
+
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'User is Verified', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })

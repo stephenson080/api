@@ -47,6 +47,10 @@ export class UserService {
     return user;
   }
 
+  async getUserByWallet(walletAddress: string){
+    return await this.userRepo.findOne({where: {wallet: {walletAddress}}, relations: {wallet: true}})
+  }
+
   async createUser(user: CreateUserDto, file?: Express.Multer.File) {
     let upload: UploadApiResponse;
     let uploadedFile: { path: string; type: string }[];
