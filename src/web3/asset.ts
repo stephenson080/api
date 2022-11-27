@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { contractToABI } from './util/crypto';
+import {addresses, blockplot} from './util/abi'
 
 const polygonRPCProvider = ethers.getDefaultProvider(
   //"https://rpc.ankr.com/polygon"
@@ -7,8 +7,8 @@ const polygonRPCProvider = ethers.getDefaultProvider(
 );
 
 const blockplotContractInstance = new ethers.Contract(
-  '0xFE91c0605280B434E0A53e963eb54e3B250188b4',
-  contractToABI['blockplot'],
+  addresses.blockplot,
+  blockplot,
   polygonRPCProvider,
 );
 
@@ -19,9 +19,12 @@ export async function getAssetMetadata(tokenId: number) {
   return {
     name: metadata.name,
     symbol: metadata.symbol,
-    totalSupply: +ethers.utils.formatUnits(metadata.totalSupply, 'wei'),
+    totalSupply: +ethers.utils.formatEther(metadata.totalSupply),
     vestingPeriod: +ethers.utils.formatUnits(metadata.vestingPeriod, 'wei'),
     costToDollar: +ethers.utils.formatUnits(metadata.costToDollar, 'wei'),
+    assetId: +ethers.utils.formatUnits(metadata.assetId, 'wei'),
+    assetIssuer: metadata.assetIssuer,
+    initialSalePeriod: +ethers.utils.formatEther(metadata.initialSalePeriod)
   };
 }
 

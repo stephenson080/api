@@ -15,6 +15,7 @@ import {
 } from 'src/utils/types';
 import { Web3Wallet } from 'src/web3/wallet';
 import { Repository } from 'typeorm';
+import {addresses} from '../web3/util/abi'
 
 @Injectable()
 export class Walletservice {
@@ -132,7 +133,7 @@ export class Walletservice {
           [contractAddress, true],
           'blockplot',
           'setApprovalForAll',
-          '0xFE91c0605280B434E0A53e963eb54e3B250188b4',
+          addresses.blockplot,
         );
         const transaction = await Web3Wallet.sendTransaction(
           ethersWallet,
@@ -146,7 +147,7 @@ export class Walletservice {
           [contractAddress, false],
           'blockplot',
           'setApprovalForAll',
-          '0xFE91c0605280B434E0A53e963eb54e3B250188b4',
+          addresses.blockplot,
         );
         const createTransactionDto: CreateOrderDto = {
           reference: transaction.hash,
