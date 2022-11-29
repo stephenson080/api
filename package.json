@@ -29,6 +29,7 @@
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "^6.1.2",
     "@nestjs/typeorm": "^9.0.1",
+    "@nestjs/websockets": "^9.1.6",
     "authenticator": "^1.1.5",
     "axios": "^0.27.2",
     "bcrypt": "^5.0.1",
@@ -44,6 +45,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.2.0",
+    "socket.io": "^4.5.3",
     "typeorm": "^0.3.9",
     "uuid": "^9.0.0",
     "validator": "^13.7.0"

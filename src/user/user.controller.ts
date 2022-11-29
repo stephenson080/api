@@ -520,10 +520,6 @@ export class UserController {
       sendTransactionDto.to,
     );
     if (contractFunction === 'buyAsset') {
-      this.userService.addUserAsset(
-        req.user.userId,
-        sendTransactionDto.params[1],
-      );
       this.notificationService.createNotification(req.user.userId, {
         title: 'Asset Purchase Successful',
         body: 'You just purchased an Asset. Check out the My Asset to view the transaction details',
@@ -531,18 +527,6 @@ export class UserController {
     }
 
     if (contractFunction === 'sellAsset') {
-      const amount = await getAssetBalance(
-        sendTransactionDto.params[1],
-        user.wallet.walletAddress,
-      );
-      if (amount === undefined) {
-      }
-      if (amount <= 0) {
-        this.userService.removeUserAsset(
-          user.userId,
-          sendTransactionDto.params[1],
-        );
-      }
       this.notificationService.createNotification(req.user.userId, {
         title: 'Asset Sale Successful',
         body: 'You just Sold an Asset. Check out the My Asset to view the transaction details',
