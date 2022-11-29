@@ -100,7 +100,7 @@ export class Walletservice {
         );
         const transaction = await Web3Wallet.sendTransaction(
           ethersWallet,
-          params,
+          [params[0], params[1], ethers.utils.parseEther(params[2])],
           contract,
           contractFunction,
           contractAddress,
@@ -115,9 +115,9 @@ export class Walletservice {
         const createTransactionDto: CreateOrderDto = {
           reference: transaction.hash,
           currency: TransactionCurrency.DOLLARS,
-          fiatAmount: +ethers.utils.formatEther(params[2]) * 600,
+          fiatAmount: +ethers.utils.formatUnits(params[2], 'wei') * 600,
           tokenAddress: params[0],
-          tokenAmount: +ethers.utils.formatEther(params[2]),
+          tokenAmount: +ethers.utils.formatUnits(params[2], 'wei'),
           type: TransactionType.BUY_ASSET,
           paymentMethod: PaymentMethod.CRYPTO,
           assetId: params[1]
@@ -128,7 +128,7 @@ export class Walletservice {
         };
       }
       if (contract === 'swap') {
-        if (contractFunction === 'swap') {
+        if (!params[3]) {
           await Web3Wallet.sendTransaction(
             ethersWallet,
             [contractAddress, ethers.constants.MaxUint256],
@@ -138,7 +138,7 @@ export class Walletservice {
           );
           const transaction = await Web3Wallet.sendTransaction(
             ethersWallet,
-            params,
+            [params[0], params[1], ethers.utils.parseEther(params[2]), params[3]],
             contract,
             contractFunction,
             contractAddress,
@@ -153,10 +153,10 @@ export class Walletservice {
           const createTransactionDto: CreateOrderDto = {
             reference: transaction.hash,
             currency: TransactionCurrency.DOLLARS,
-            fiatAmount: +ethers.utils.formatEther(params[2]) * 600,
+            fiatAmount: +ethers.utils.formatUnits(params[2], 'wei') * 600,
             
             tokenAddress: params[1],
-            tokenAmount: +ethers.utils.formatEther(params[2]),
+            tokenAmount: +ethers.utils.formatUnits(params[2], 'wei'),
             type: TransactionType.BUY_ASSET,
             paymentMethod: PaymentMethod.CRYPTO,
             assetId: params[0]
@@ -175,7 +175,7 @@ export class Walletservice {
         );
         const transaction = await Web3Wallet.sendTransaction(
           ethersWallet,
-          params,
+          [params[0], params[1], ethers.utils.parseEther(params[2]), true],
           contract,
           contractFunction,
           contractAddress,
@@ -190,10 +190,10 @@ export class Walletservice {
         const createTransactionDto: CreateOrderDto = {
           reference: transaction.hash,
           currency: TransactionCurrency.DOLLARS,
-          fiatAmount: +ethers.utils.formatEther(params[2]) * 600,
+          fiatAmount: +ethers.utils.formatUnits(params[2], 'wei') * 600,
           
           tokenAddress: params[1],
-          tokenAmount: +ethers.utils.formatEther(params[2]),
+          tokenAmount: +ethers.utils.formatUnits(params[2], 'wei'),
           type: TransactionType.SELL_ASSET,
           paymentMethod: PaymentMethod.CRYPTO,
           assetId: params[0]
