@@ -1146,6 +1146,19 @@ export const initialSale = [
         inputs: [
             {
                 indexed: true,
+                internalType: 'uint256',
+                name: 'newSwapFee',
+                type: 'uint256',
+            },
+        ],
+        name: 'SwapFeeChanged',
+        type: 'event',
+    },
+    {
+        anonymous: false,
+        inputs: [
+            {
+                indexed: true,
                 internalType: 'address',
                 name: 'tokenAddress',
                 type: 'address',
@@ -1157,20 +1170,7 @@ export const initialSale = [
                 type: 'address',
             },
         ],
-        name: 'StableCoinToPriceFeedSet',
-        type: 'event',
-    },
-    {
-        anonymous: false,
-        inputs: [
-            {
-                indexed: true,
-                internalType: 'uint256',
-                name: 'newSwapFee',
-                type: 'uint256',
-            },
-        ],
-        name: 'SwapFeeChanged',
+        name: 'TokenOracleSet',
         type: 'event',
     },
     {
@@ -1325,7 +1325,7 @@ export const initialSale = [
             },
             {
                 internalType: 'address',
-                name: '',
+                name: 'from',
                 type: 'address',
             },
             {
@@ -1364,7 +1364,7 @@ export const initialSale = [
             },
             {
                 internalType: 'address',
-                name: '',
+                name: 'from',
                 type: 'address',
             },
             {
@@ -1781,6 +1781,19 @@ export const swap = [
         type: 'event',
     },
     {
+        inputs: [],
+        name: '_swapFee',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256',
+            },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+    },
+    {
         inputs: [
             {
                 internalType: 'address',
@@ -1813,13 +1826,13 @@ export const swap = [
             },
             {
                 internalType: 'uint256',
-                name: '_amount0',
+                name: 'amount',
                 type: 'uint256',
             },
             {
-                internalType: 'uint256',
-                name: '_amount1',
-                type: 'uint256',
+                internalType: 'bool',
+                name: 'isAmountInAsset',
+                type: 'bool',
             },
         ],
         name: 'addLiquidity',
@@ -1827,6 +1840,11 @@ export const swap = [
             {
                 internalType: 'uint256',
                 name: 'shares',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'amount2',
                 type: 'uint256',
             },
         ],
@@ -2057,6 +2075,35 @@ export const swap = [
         type: 'function',
     },
     {
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: '',
+                type: 'uint256',
+            },
+            {
+                internalType: 'address',
+                name: '',
+                type: 'address',
+            },
+        ],
+        name: 'protocolFeeBalanceOf',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'reserve0',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'reserve1',
+                type: 'uint256',
+            },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+    },
+    {
         inputs: [],
         name: 'protocolFeeStatus',
         outputs: [
@@ -2255,50 +2302,6 @@ export const swap = [
                 name: 'amountOut1',
                 type: 'uint256',
             },
-            {
-                internalType: 'uint256',
-                name: 'amountInFee',
-                type: 'uint256',
-            },
-            {
-                internalType: 'uint256',
-                name: 'routeFee',
-                type: 'uint256',
-            },
-            {
-                components: [
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve0',
-                        type: 'uint256',
-                    },
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve1',
-                        type: 'uint256',
-                    },
-                ],
-                internalType: 'struct SwapERC1155.PairReserve',
-                name: '_pairReserve0',
-                type: 'tuple',
-            },
-            {
-                components: [
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve0',
-                        type: 'uint256',
-                    },
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve1',
-                        type: 'uint256',
-                    },
-                ],
-                internalType: 'struct SwapERC1155.PairReserve',
-                name: '_pairReserve1',
-                type: 'tuple',
-            },
         ],
         stateMutability: 'view',
         type: 'function',
@@ -2333,33 +2336,29 @@ export const swap = [
                 name: 'amountOut',
                 type: 'uint256',
             },
-            {
-                internalType: 'uint256',
-                name: 'amountInFee',
-                type: 'uint256',
-            },
-            {
-                components: [
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve0',
-                        type: 'uint256',
-                    },
-                    {
-                        internalType: 'uint256',
-                        name: 'reserve1',
-                        type: 'uint256',
-                    },
-                ],
-                internalType: 'struct SwapERC1155.PairReserve',
-                name: '_pairReserve',
-                type: 'tuple',
-            },
         ],
         stateMutability: 'view',
         type: 'function',
     },
-]
+    {
+        inputs: [
+            {
+                internalType: 'address',
+                name: 'tokenAddress',
+                type: 'address',
+            },
+            {
+                internalType: 'uint256',
+                name: 'assetId',
+                type: 'uint256',
+            },
+        ],
+        name: 'withdrawFees',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+    },
+];
 
 export const blockplotViewer = [
     {
@@ -3042,11 +3041,11 @@ export const priceConsumerV3ABI = [
 ];
 
 export const addresses = {
-    token: '0x77d7eA01F91577DB10dB79fB8dB1128110b66cdB',
-    initialSale: '0xB96Bd7305F75E650b4239dc3BE762C5da2C940d8',
-    identity: '0x929D1AC3c4F2f2D989d5bA94a9D0C93C5D07ec5C',
-    blockplotViewer: '0x44096fA5234184468a2465a7393F028b7BD4deb1',
-    blockplot: '0xdb41386f75Fab32C34E2bF5a4086C690B8c8d36E',
-    priceConsumer: '0x711Ba244A82f22DC425146013A04f4aB25d73917',
-    swap: '0x03cE85894BD4dD83C262A7Ce4C30FfDe2D0Fb9De'
+    token: '0xa8dB544157ad63bE5AB4D909a8319eDE0EA72faA',
+    initialSale: '0xC12E62F28fABd17531298833deBcF98143e910E3',
+    identity: '0x59c217C6c4d91926caa027D4c8393Cd35422666a',
+    blockplotViewer: '0x4B0799Ccc23c2b555f2Edd50622E6FfB74cE0D17',
+    blockplot: '0xD2b0bc902D9D984282937aDccDD1C8d472384a60',
+    priceConsumer: '0x9eA7570DB96972aF8F488Ca5904e1A088caAc99d',
+    swap: '0x9A0675e84F16513213330D0f186061EA95b126A0'
 }

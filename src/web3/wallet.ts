@@ -8,8 +8,8 @@ const axios = new Axios({})
 // console.log(axios)
 
 const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
+  "https://rpc.ankr.com/polygon"
+  // 'https://rpc-mumbai.maticvigil.com',
 );
 
 // const encryption = () => {

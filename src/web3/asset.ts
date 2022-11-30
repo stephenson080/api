@@ -2,8 +2,8 @@ import { ethers } from 'ethers';
 import {addresses, blockplot} from './util/abi'
 
 const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
+  "https://rpc.ankr.com/polygon"
+  // 'https://rpc-mumbai.maticvigil.com',
 );
 
 const blockplotContractInstance = new ethers.Contract(

@@ -39,8 +39,8 @@ export async function ENSResolver(ensId: string) {
 }
 
 const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
+  "https://rpc.ankr.com/polygon"
+  // 'https://rpc-mumbai.maticvigil.com',
 );
 
 // returns input data of params parsed into it, if done right
