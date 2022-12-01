@@ -162,7 +162,7 @@ export class Web3Wallet {
   static async sendTransaction(
     walletInstance: ethers.Wallet,
     params: any[],
-    contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
+    contract: 'token' | 'initialSale' | 'blockplot' | 'swap' | 'identity',
     contractFunction: string,
     contractAddress: string,
     value?: string

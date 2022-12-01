@@ -45,6 +45,7 @@ import {
   AddBankDto,
   ChangePasswordDto,
   CreateUserDto,
+  DemoKycDto,
   Enable2FaDto,
   ForgotpasswordDto,
   LoggedInUserDto,
@@ -95,6 +96,7 @@ export class UserController {
   @ApiOkResponse({ description: 'User Created!', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   async addUser(@Body() user: CreateUserDto) {
+    console.log(user)
     await this.userService.createUser(user);
     return new MessageResponseDto('Success', "Registration Success")
   }
@@ -343,6 +345,13 @@ export class UserController {
   @Post('/forgot-password')
   async forgotPassword(@Body() forgotpasswordDto: ForgotpasswordDto) {
     return await this.userService.forgotPassword(forgotpasswordDto);
+  }
+
+  @ApiOkResponse({ description: 'Demo KYC', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @Post('/demo-kyc')
+  async demoKYC(@Body() demoKycDto: DemoKycDto) {
+    return await this.userService.demoKyc(demoKycDto.walletAddress, demoKycDto.custodial)
   }
 
   @ApiBearerAuth()

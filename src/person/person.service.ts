@@ -12,7 +12,7 @@ export class PersonService {
 
   async createPerson(person: CreatePersonDto, files?: string[]) {
     try {
-      const newPerson = this.personRepo.create({...person, documentUrl: files[0], imageUrl: files.length > 1 ? files[1] : undefined});
+      const newPerson = this.personRepo.create({...person, documentUrl: files && files[0], imageUrl: files && files.length > 1 ? files[1] : undefined});
       return await this.personRepo.save(newPerson);
     } catch (error) {
       throw new UnprocessableEntityException({ message: error.message });

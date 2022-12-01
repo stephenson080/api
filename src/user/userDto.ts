@@ -177,6 +177,18 @@ export class ChangePasswordDto {
     newPassword: string
 }
 
+export class DemoKycDto {
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    walletAddress: string
+
+    @ApiProperty({type: Boolean, required: true})
+    @IsBoolean()
+    @IsNotEmpty()
+    custodial: boolean
+}
+
 export class UserMessageResponseDto{
     @ApiProperty({type: String, enum: ['Success', 'Error' ]})
     type: string

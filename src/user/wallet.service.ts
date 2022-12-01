@@ -127,7 +127,9 @@ export class Walletservice {
           reference: transaction.hash,
         };
       }
+      console.log(params[3])
       if (contract === 'swap') {
+        console.log(params[3])
         if (!params[3]) {
           await Web3Wallet.sendTransaction(
             ethersWallet,
@@ -153,10 +155,10 @@ export class Walletservice {
           const createTransactionDto: CreateOrderDto = {
             reference: transaction.hash,
             currency: TransactionCurrency.DOLLARS,
-            fiatAmount: +ethers.utils.formatUnits(params[2], 'wei') * 600,
+            fiatAmount: +ethers.utils.formatUnits(params[2].toString(), 'wei') * 600,
             
             tokenAddress: params[1],
-            tokenAmount: +ethers.utils.formatUnits(params[2], 'wei'),
+            tokenAmount: +ethers.utils.formatUnits(params[2].toString(), 'wei'),
             type: TransactionType.BUY_ASSET,
             paymentMethod: PaymentMethod.CRYPTO,
             assetId: params[0]

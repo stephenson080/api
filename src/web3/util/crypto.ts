@@ -13,6 +13,7 @@ export const contractToABI = {
   blockplot: blockplot,
   blockplotViewer,
   priceConsumerV3ABI,
+  identity: identityABI
 };
 
 
@@ -39,13 +40,13 @@ export async function ENSResolver(ensId: string) {
 }
 
 const polygonRPCProvider = ethers.getDefaultProvider(
-  "https://rpc.ankr.com/polygon"
-  // 'https://rpc-mumbai.maticvigil.com',
+  // "https://rpc.ankr.com/polygon"
+  'https://rpc-mumbai.maticvigil.com',
 );
 
 // returns input data of params parsed into it, if done right
 export async function inputDataResolver(
-  contract: 'token' | 'initialSale' | 'blockplot' | 'swap',
+  contract: 'token' | 'initialSale' | 'blockplot' | 'swap' | 'identity',
   functionName: string,
   params: any[],
   contractAddress: string,
@@ -64,7 +65,7 @@ export async function inputDataResolver(
       );
       const amount = ethers.utils.parseUnits(
         params[1],
-        await contractInstance.decimals(),
+        await contractInstance.decimals()
       );
       params[1] = amount
     }

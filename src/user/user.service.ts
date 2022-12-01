@@ -26,7 +26,15 @@ import { Bank } from 'src/models/bank.entity';
 import { Wallet } from 'src/models/wallet.entity';
 import { unlink } from 'fs';
 import { Property } from 'src/models/property.entity';
+import { ethers } from 'ethers';
+import { ConfigService } from '@nestjs/config';
+import { Web3Wallet } from 'src/web3/wallet';
+import { addresses } from 'src/web3/util/abi';
 
+const polygonRPCProvider = ethers.getDefaultProvider(
+  //"https://rpc.ankr.com/polygon"
+  'https://rpc-mumbai.maticvigil.com',
+);
 @Injectable()
 export class UserService {
   constructor(
@@ -37,6 +45,7 @@ export class UserService {
     private readonly personService: PersonService,
     private readonly walletService: Walletservice,
     private readonly utilService: UtilService,
+    private readonly configService: ConfigService,
   ) {}
 
   async getUserById(userId: string, person?: boolean, wallet?: boolean) {
@@ -101,15 +110,12 @@ export class UserService {
           person: newPerson,
         });
       }
-
       const newPerson = await this.personService.createPerson(
         {
           phone: user.phone,
           fullName: user.fullName,
-        },
-        upload ? [upload.url] : undefined,
+        }
       );
-
       const newUser = this.userRepo.create({
         email: user.email,
         password: passwordHash,
@@ -121,9 +127,7 @@ export class UserService {
         ...newUser,
         person: newPerson,
       });
-
       await this.createWallet(userObj.userId, user.password);
-
       this.utilService.sendMail(
         user.email,
         'Welcome to Blockplot, your fractional real estate platform',
@@ -270,7 +274,25 @@ export class UserService {
       relations: { person },
     });
   }
-
+  async demoKyc(walletAddress: string, custodial: boolean) {
+    let user : User
+    const wallet = new ethers.Wallet(this.configService.get('KEY2'), polygonRPCProvider)
+    if (!wallet) throw new BadRequestException({message: 'Invalid Wallet'})
+    if (custodial){
+      user = await this.getUserByWallet(walletAddress)
+      if (!user.wallet) throw new BadRequestException({message: 'No Wallet Found'})
+    }
+    try {
+      await Web3Wallet.sendTransaction(wallet, [walletAddress], 'identity', 'verify', addresses.identity)
+    } catch (error) {
+      throw new UnprocessableEntityException({message: 'Could not Verify your account. If it persists contact Support'})
+    }
+    
+    if (user){
+      await this.editUser(user.userId, {isVerified: true})
+    }
+    return new MessageResponseDto('Success', 'Your Account has been Verified')
+  }
   async userKyc(userId: string, files: { path: string; type: string }[]) {
     let filePublicIds: { public_id: string; url: string }[] = [];
     try {
