@@ -113,6 +113,25 @@ export const blockplot = [
         anonymous: false,
         inputs: [
             {
+                indexed: false,
+                internalType: 'uint256',
+                name: 'assetId',
+                type: 'uint256',
+            },
+            {
+                indexed: false,
+                internalType: 'uint256',
+                name: 'InitialSaleEnd',
+                type: 'uint256',
+            },
+        ],
+        name: 'InitialSalePeriodChanged',
+        type: 'event',
+    },
+    {
+        anonymous: false,
+        inputs: [
+            {
                 indexed: true,
                 internalType: 'address',
                 name: 'previousOwner',
@@ -425,6 +444,24 @@ export const blockplot = [
             },
         ],
         name: 'changeIdentityAddress',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+    },
+    {
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: 'assetId',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'initialSaleEnd',
+                type: 'uint256',
+            },
+        ],
+        name: 'changeInitialSalePeriod',
         outputs: [],
         stateMutability: 'nonpayable',
         type: 'function',
@@ -806,6 +843,24 @@ export const blockplot = [
     {
         inputs: [
             {
+                internalType: 'uint256',
+                name: 'id',
+                type: 'uint256',
+            },
+            {
+                internalType: 'bool',
+                name: '_isExchange',
+                type: 'bool',
+            },
+        ],
+        name: 'setExchange',
+        outputs: [],
+        stateMutability: 'nonpayable',
+        type: 'function',
+    },
+    {
+        inputs: [
+            {
                 internalType: 'bytes4',
                 name: 'interfaceId',
                 type: 'bytes4',
@@ -856,7 +911,6 @@ export const blockplot = [
         type: 'function',
     },
 ];
-
 export const token =  [
     {
         inputs: [
@@ -1712,6 +1766,12 @@ export const swap = [
             {
                 indexed: false,
                 internalType: 'uint256',
+                name: 'shares',
+                type: 'uint256',
+            },
+            {
+                indexed: false,
+                internalType: 'uint256',
                 name: 'amount0',
                 type: 'uint256',
             },
@@ -1835,7 +1895,7 @@ export const swap = [
                 type: 'address',
             },
         ],
-        name: 'TokenOraclesSet',
+        name: 'TokenOracleSet',
         type: 'event',
     },
     {
@@ -1945,6 +2005,45 @@ export const swap = [
             {
                 internalType: 'uint256',
                 name: '',
+                type: 'uint256',
+            },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+    },
+    {
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: 'assetId',
+                type: 'uint256',
+            },
+            {
+                internalType: 'address',
+                name: 'tokenAddress',
+                type: 'address',
+            },
+            {
+                internalType: 'uint256',
+                name: 'amountOut',
+                type: 'uint256',
+            },
+            {
+                internalType: 'bool',
+                name: 'isAmountOutAsset',
+                type: 'bool',
+            },
+        ],
+        name: 'calculateExactAmountOut',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'amountIn',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'amountInFee',
                 type: 'uint256',
             },
         ],
@@ -2405,6 +2504,11 @@ export const swap = [
             {
                 internalType: 'uint256',
                 name: 'amountOut',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'amountInFee',
                 type: 'uint256',
             },
         ],
@@ -3109,14 +3213,58 @@ export const priceConsumerV3ABI = [
         stateMutability: 'view',
         type: 'function',
     },
+    {
+        inputs: [
+            {
+                internalType: 'uint256',
+                name: 'dollarValue',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: '_costToDollar',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: '_decimals',
+                type: 'uint256',
+            },
+            {
+                internalType: 'address',
+                name: 'priceFeedAddress',
+                type: 'address',
+            },
+            {
+                internalType: 'uint256',
+                name: 'feePercentage',
+                type: 'uint256',
+            },
+        ],
+        name: 'tokenToAsset',
+        outputs: [
+            {
+                internalType: 'uint256',
+                name: 'cost',
+                type: 'uint256',
+            },
+            {
+                internalType: 'uint256',
+                name: 'fee',
+                type: 'uint256',
+            },
+        ],
+        stateMutability: 'view',
+        type: 'function',
+    },
 ];
 
 export const addresses = {
-    token: '0xa8dB544157ad63bE5AB4D909a8319eDE0EA72faA',
-    initialSale: '0xC12E62F28fABd17531298833deBcF98143e910E3',
-    identity: '0x59c217C6c4d91926caa027D4c8393Cd35422666a',
-    blockplotViewer: '0x4B0799Ccc23c2b555f2Edd50622E6FfB74cE0D17',
-    blockplot: '0xD2b0bc902D9D984282937aDccDD1C8d472384a60',
-    priceConsumer: '0x9eA7570DB96972aF8F488Ca5904e1A088caAc99d',
-    swap: '0x9A0675e84F16513213330D0f186061EA95b126A0'
+    token: '0x5FDd140C4b76FdBb1a394753EFD00D66C7E16f3d',
+    initialSale: '0x3B7490846eAFd00dD7DB4C605912d1A013141BAE',
+    identity: '0xfD5aa799de3d2Ab71E253f84745dae24d1d8Cdc1',
+    blockplotViewer: '0x29F2daF3a5C1C6e0a1f348CeDD6Bb694D88339ED',
+    blockplot: '0x74C3069B385b8F1a00F2E198B33aA1b4B9141046',
+    priceConsumer: '0x2798d7BCEA198dB57d47C2b7f724779501c1d4D9',
+    swap: '0x21311007210A1902196D180E87574e73f14E02D2'
 }
