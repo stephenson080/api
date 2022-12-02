@@ -21,63 +21,63 @@ import { Notification } from './models/notifications.entity';
 
 // production Connection
 
-// @Module({
-//   imports: [
-//     TypeOrmModule.forRoot({
-//       type: 'postgres',
-//       url: process.env.DATABASE_URL,
-//       entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
-//       synchronize: true,
-//       ssl: {
-//         rejectUnauthorized: false,
-//       },
-//     }),
-//     UserModule,
-//     UtilModule,
-//     PropertyModule,
-//      TransactionModule,
-//      NotificationModule
-//   ],
-//   controllers: [],
-//   providers: [
-//     {
-//       provide: APP_INTERCEPTOR,
-//       useClass: ClassSerializerInterceptor,
-//     },
-//   ],
-// })
-
-// Development Connnection
-
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-
-        type: 'postgres',
-        host: configService.get('DB_HOST'),
-        port: +configService.get<number>('DB_PORT'),
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_NAME'),
-        entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
-        synchronize: true
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
+      synchronize: true,
+      ssl: {
+        rejectUnauthorized: false,
+      },
     }),
     UserModule,
     UtilModule,
     PropertyModule,
-    TransactionModule,
-    NotificationModule,
-
+     TransactionModule,
+     NotificationModule
   ],
   controllers: [],
-  providers: [{
-    provide: APP_INTERCEPTOR,
-    useClass: ClassSerializerInterceptor
-  }],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ClassSerializerInterceptor,
+    },
+  ],
 })
+
+// Development Connnection
+
+// @Module({
+//   imports: [
+//     ConfigModule.forRoot({ isGlobal: true }),
+//     TypeOrmModule.forRootAsync({
+//       imports: [ConfigModule],
+//       useFactory: (configService: ConfigService) => ({
+
+//         type: 'postgres',
+//         host: configService.get('DB_HOST'),
+//         port: +configService.get<number>('DB_PORT'),
+//         username: configService.get('DB_USERNAME'),
+//         password: configService.get('DB_PASSWORD'),
+//         database: configService.get('DB_NAME'),
+//         entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
+//         synchronize: true
+//       }),
+//       inject: [ConfigService],
+//     }),
+//     UserModule,
+//     UtilModule,
+//     PropertyModule,
+//     TransactionModule,
+//     NotificationModule,
+
+//   ],
+//   controllers: [],
+//   providers: [{
+//     provide: APP_INTERCEPTOR,
+//     useClass: ClassSerializerInterceptor
+//   }],
+// })
 export class AppModule {}
