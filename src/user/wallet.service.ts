@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ethers } from 'ethers';
 import { Wallet } from 'src/models/wallet.entity';
@@ -16,11 +17,13 @@ import {
 import { Web3Wallet } from 'src/web3/wallet';
 import { Repository } from 'typeorm';
 import {addresses} from '../web3/util/abi'
+import {provider} from '../web3/util/constants'
 
 @Injectable()
 export class Walletservice {
   constructor(
     @InjectRepository(Wallet) private readonly walletRepo: Repository<Wallet>,
+    private readonly configService : ConfigService
   ) {}
   async getwallet(id?: string, address?: string){
     return await this.walletRepo.findOneBy({walletId: id, walletAddress: address})
@@ -90,6 +93,7 @@ export class Walletservice {
         throw new BadRequestException({
           message: 'OPPs! Seems your password is incorrect. try again',
         });
+      await this.sendUserSomeNativeToken(ethersWallet.address)
       if (contract === 'initialSale') {
         await Web3Wallet.sendTransaction(
           ethersWallet,
@@ -127,9 +131,7 @@ export class Walletservice {
           reference: transaction.hash,
         };
       }
-      console.log(params[3])
       if (contract === 'swap') {
-        console.log(params[3])
         if (!params[3]) {
           await Web3Wallet.sendTransaction(
             ethersWallet,
@@ -234,6 +236,21 @@ export class Walletservice {
       // if (error.message.length > 200) throw new UnprocessableEntityException({message: 'Something went wrong. Try Agin. If it persist Contact Support'})
 
       throw new UnprocessableEntityException({ message: error.message });
+    }
+  }
+
+  async sendUserSomeNativeToken(walletAddress : string) {
+    try {
+      const wallet = new ethers.Wallet(this.configService.get('KEY'), provider)
+      const bal = +ethers.utils.formatEther(await provider.getBalance(walletAddress))
+      console.log(bal)
+      if (bal < 0.1){
+        wallet.sendTransaction({to: walletAddress, value: ethers.utils.parseEther('0.15')})
+        return
+      }
+
+    }catch(error){
+      console.log(error)
     }
   }
 }

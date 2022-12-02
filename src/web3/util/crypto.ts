@@ -1,6 +1,8 @@
 import { ethers } from 'ethers';
 import { pbkdf2Sync, randomBytes } from 'crypto';
 import {blockplot, swap, blockplotViewer, identityABI, initialSale,priceConsumerV3ABI, token} from './abi'
+import {provider} from './constants'
+
 // import tokenABI from './ABIs/IERC20Metadata.json';
 // import initialSaleABI from './ABIs/IInitialSale.json';
 // import swapABI from './ABIs/ISwapERC1155.json';
@@ -39,10 +41,10 @@ export async function ENSResolver(ensId: string) {
   }
 }
 
-const polygonRPCProvider = ethers.getDefaultProvider(
-  // "https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
-);
+// const polygonRPCProvider = ethers.getDefaultProvider(
+//   // "https://rpc.ankr.com/polygon"
+//   'https://rpc-mumbai.maticvigil.com',
+// );
 
 // returns input data of params parsed into it, if done right
 export async function inputDataResolver(
@@ -60,7 +62,7 @@ export async function inputDataResolver(
         contractToABI[contract],
         new ethers.VoidSigner(
           '0xfe4F5145f6e09952a5ba9e956ED0C25e3Fa4c7F1',
-          polygonRPCProvider,
+          provider,
         ),
       );
       const amount = ethers.utils.parseUnits(

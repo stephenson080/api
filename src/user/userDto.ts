@@ -189,6 +189,16 @@ export class DemoKycDto {
     custodial: boolean
 }
 
+export class TestnetFaucetDto {
+    @ApiProperty({type: String, required: true})
+    @IsString()
+    @IsNotEmpty()
+    walletAddress: string
+
+    @ApiProperty({type: Number, required: true})
+    @IsNotEmpty()
+    amount: number
+}
 export class UserMessageResponseDto{
     @ApiProperty({type: String, enum: ['Success', 'Error' ]})
     type: string

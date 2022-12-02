@@ -2,15 +2,16 @@ import { ethers } from 'ethers';
 import { encryption, inputDataResolver, ENSResolver } from './util/crypto';
 import { pbkdf2Sync, randomBytes } from 'crypto';
 import {Axios} from 'axios'
+import {provider} from './util/constants'
 
 const axios = new Axios({})
 
 // console.log(axios)
 
-const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
-);
+// const polygonRPCProvider = ethers.getDefaultProvider(
+//   //"https://rpc.ankr.com/polygon"
+//   'https://rpc-mumbai.maticvigil.com',
+// );
 
 // const encryption = () => {
 
@@ -97,7 +98,7 @@ export class Web3Wallet {
       if (typeof result === 'string') {
         throw new Error('Error Importing wallet');
       }
-      const importedWallet = new ethers.Wallet(_privateKey, polygonRPCProvider);
+      const importedWallet = new ethers.Wallet(_privateKey, provider);
       const randomEncryptedWallet = await importedWallet.encrypt(
         result.randomHashedPassword,
       );
@@ -168,7 +169,7 @@ export class Web3Wallet {
     value?: string
   ) {
     try {
-      const wallet = walletInstance.connect(polygonRPCProvider);
+      const wallet = walletInstance.connect(provider);
 
     const nonce = await wallet.getTransactionCount();
 
@@ -215,10 +216,10 @@ export class Web3Wallet {
           'gwei',
         ),
         gasLimit: gasEstimate,
-        chainId: polygonRPCProvider._network.chainId,
+        chainId: provider._network.chainId,
       };
 
-      console.log('chain id: ' + polygonRPCProvider._network.chainId);
+      console.log('chain id: ' + provider._network.chainId);
       console.log('Processing');
       const transaction = await wallet.sendTransaction(rawTransaction);
       console.log('Pending Confirmation...');

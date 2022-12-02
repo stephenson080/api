@@ -9,11 +9,13 @@ import { UtilModule } from 'src/util/util.module';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from 'src/notification/notification.service';
 import { Notification } from 'src/models/notifications.entity';
+import { Walletservice } from 'src/user/wallet.service';
+import { Wallet } from 'src/models/wallet.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Transaction, User, Notification]), UserModule, UtilModule],
+  imports: [TypeOrmModule.forFeature([Transaction, User, Notification, Wallet]), UserModule, UtilModule],
   controllers: [TransactionController],
-  providers: [TransactionService, ConfigService, NotificationService],
+  providers: [TransactionService, ConfigService, NotificationService, Walletservice],
   exports: [TransactionService]
 })
 export class TransactionModule {}

@@ -23,10 +23,12 @@ import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { NotificationService } from 'src/notification/notification.service';
-const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
-);
+import {provider} from '../web3/util/constants'
+import { Walletservice } from 'src/user/wallet.service';
+// const polygonRPCProvider = ethers.getDefaultProvider(
+//   //"https://rpc.ankr.com/polygon"
+//   'https://rpc-mumbai.maticvigil.com',
+// );
 
 @Injectable()
 export class TransactionService {
@@ -37,6 +39,7 @@ export class TransactionService {
     private readonly userService: UserService,
     private readonly notificationService: NotificationService,
     private readonly utilService: UtilService,
+    private readonly walletService: Walletservice,
   ) {}
 
   async createTransaction(
@@ -103,7 +106,7 @@ export class TransactionService {
           });
         const wallet = new ethers.Wallet(
           this.configService.get('KEY'),
-          polygonRPCProvider,
+          provider,
         );
         await Web3Wallet.sendTransaction(
           wallet,
@@ -118,6 +121,9 @@ export class TransactionService {
         });
         await this.editTransaction(existTrx.orderId, { isVerified: true });
         this.userService.editUser(user.userId, {fundWallet: true})
+        if (user.wallet && user.wallet.walletAddress){
+          this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress)
+        }
         const notifications =
           await this.notificationService.getUsersNotifications(user.userId);
         const msg = new MessageResponseDto('Success', `Transaction Successful`);
@@ -146,7 +152,7 @@ export class TransactionService {
         });
       const wallet = new ethers.Wallet(
         this.configService.get('KEY'),
-        polygonRPCProvider,
+        provider,
       );
       await Web3Wallet.sendTransaction(
         wallet,
@@ -161,6 +167,9 @@ export class TransactionService {
       });
       await this.editTransaction(existTrx.orderId, { isVerified: true });
       this.userService.editUser(user.userId, {fundWallet: true})
+      if (user.wallet && user.wallet.walletAddress){
+        this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress)
+      }
       const notifications =
         await this.notificationService.getUsersNotifications(user.userId);
       const msg = new MessageResponseDto('Success', `Transaction Successful`);

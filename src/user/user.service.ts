@@ -15,6 +15,7 @@ import {
   AddBankDto,
   CreateUserDto,
   ForgotpasswordDto,
+  TestnetFaucetDto,
   UserKYCDto,
 } from './userDto';
 import { PersonService } from 'src/person/person.service';
@@ -30,11 +31,13 @@ import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { addresses } from 'src/web3/util/abi';
+import {provider} from '../web3/util/constants'
+import {balanceOf} from '../web3/erc20'
 
-const polygonRPCProvider = ethers.getDefaultProvider(
-  //"https://rpc.ankr.com/polygon"
-  'https://rpc-mumbai.maticvigil.com',
-);
+// const polygonRPCProvider = ethers.getDefaultProvider(
+//   //"https://rpc.ankr.com/polygon"
+//   'https://rpc-mumbai.maticvigil.com',
+// );
 @Injectable()
 export class UserService {
   constructor(
@@ -276,7 +279,7 @@ export class UserService {
   }
   async demoKyc(walletAddress: string, custodial: boolean) {
     let user : User
-    const wallet = new ethers.Wallet(this.configService.get('KEY2'), polygonRPCProvider)
+    const wallet = new ethers.Wallet(this.configService.get('KEY2'), provider)
     if (!wallet) throw new BadRequestException({message: 'Invalid Wallet'})
     if (custodial){
       user = await this.getUserByWallet(walletAddress)
@@ -553,6 +556,29 @@ export class UserService {
       banks: [...user.banks, newBank],
       updatedAt: new Date(),
     });
+  }
+
+  async testnetFaucet(testnetFaucet: TestnetFaucetDto){
+    try {
+      const wallet = new ethers.Wallet(
+        this.configService.get('KEY'),
+        provider,
+      );
+      const bal = +ethers.utils.formatEther(await balanceOf(addresses.token, testnetFaucet.walletAddress))
+      if (bal >= 5000){
+        throw new BadRequestException({message: 'You still enough Busd for Testing'})
+      }
+      await Web3Wallet.sendTransaction(
+        wallet,
+        [testnetFaucet.walletAddress, testnetFaucet.amount.toString()],
+        'token',
+        'transfer',
+        addresses.token,
+      );
+    } catch (error) {
+      throw new UnprocessableEntityException({message: error.message})
+    }
+    
   }
 
   private async hashPassword(password: string) {

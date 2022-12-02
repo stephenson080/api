@@ -51,6 +51,7 @@ import {
   LoggedInUserDto,
   LoginUserDto,
   ResetPasswordDto,
+  TestnetFaucetDto,
   UserResponseDto,
   VerifyUserDto,
 } from './userDto';
@@ -391,6 +392,14 @@ export class UserController {
       req.user.userId,
       enable2FaDto.token,
     );
+  }
+
+  @ApiOkResponse({ description: 'Faucet for Testing', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @Post('/faucet')
+  async testFaucet(@Body() testFaucetDto: TestnetFaucetDto) {
+    await this.userService.testnetFaucet(testFaucetDto)
+    return new MessageResponseDto('Success', "Test BUSD is Not it way to your Wallet" )
   }
 
   @ApiBearerAuth()
