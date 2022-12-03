@@ -561,12 +561,12 @@ export class UserService {
   async testnetFaucet(testnetFaucet: TestnetFaucetDto){
     try {
       const wallet = new ethers.Wallet(
-        this.configService.get('KEY'),
+        this.configService.get('KEY2'),
         provider,
       );
       const bal = +ethers.utils.formatEther(await balanceOf(addresses.token, testnetFaucet.walletAddress))
       if (bal >= 5000){
-        throw new BadRequestException({message: 'You still enough Busd for Testing'})
+        throw new BadRequestException({message: 'You still have enough Busd for Testing'})
       }
       await Web3Wallet.sendTransaction(
         wallet,

@@ -151,7 +151,7 @@ export class TransactionService {
           message: 'Transaction Already completed!',
         });
       const wallet = new ethers.Wallet(
-        this.configService.get('KEY'),
+        this.configService.get('KEY2'),
         provider,
       );
       await Web3Wallet.sendTransaction(

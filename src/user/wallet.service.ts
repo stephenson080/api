@@ -95,6 +95,7 @@ export class Walletservice {
         });
       await this.sendUserSomeNativeToken(ethersWallet.address)
       if (contract === 'initialSale') {
+       
         await Web3Wallet.sendTransaction(
           ethersWallet,
           [contractAddress, ethers.constants.MaxUint256],

@@ -97,7 +97,6 @@ export class UserController {
   @ApiOkResponse({ description: 'User Created!', type: MessageResponseDto })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   async addUser(@Body() user: CreateUserDto) {
-    console.log(user)
     await this.userService.createUser(user);
     return new MessageResponseDto('Success', "Registration Success")
   }
@@ -399,7 +398,7 @@ export class UserController {
   @Post('/faucet')
   async testFaucet(@Body() testFaucetDto: TestnetFaucetDto) {
     await this.userService.testnetFaucet(testFaucetDto)
-    return new MessageResponseDto('Success', "Test BUSD is Not it way to your Wallet" )
+    return new MessageResponseDto('Success', "Test BUSD is on it way to your Wallet" )
   }
 
   @ApiBearerAuth()
