@@ -1,7 +1,7 @@
 import {IsNotEmpty, IsString, IsEmail, IsArray, IsBoolean} from 'class-validator'
 import {Exclude} from 'class-transformer'
 import {ApiProperty} from '@nestjs/swagger'
-import {Roles} from '../utils/types'
+import {Roles} from '../../utils/types'
 import { PersonResponseDto } from 'src/person/personDto'
 export class CreateUserDto {
 

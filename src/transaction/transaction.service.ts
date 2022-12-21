@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Transaction } from 'src/models/transaction.entity';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/user/services/user.service';
 import { UtilService } from 'src/util/util.service';
 import {
   TransactionType,
@@ -24,7 +24,7 @@ import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { NotificationService } from 'src/notification/notification.service';
 import {provider} from '../web3/util/constants'
-import { Walletservice } from 'src/user/wallet.service';
+import { Walletservice } from 'src/user/services/wallet.service';
 // const polygonRPCProvider = ethers.getDefaultProvider(
 //   //"https://rpc.ankr.com/polygon"
 //   'https://rpc-mumbai.maticvigil.com',

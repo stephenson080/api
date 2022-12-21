@@ -2,7 +2,7 @@ import {IsNotEmpty, IsEmail, IsString, IsNumber} from 'class-validator'
 import {ApiProperty} from '@nestjs/swagger'
 import { Exclude } from 'class-transformer'
 import { PropertyType } from 'src/utils/types'
-import { UserResponseDto } from 'src/user/userDto'
+import { UserResponseDto } from 'src/user/dtos/userDto'
 
 export class AddPropertyDto {
     @ApiProperty({type: String, required: true})

@@ -17,6 +17,7 @@ import { Transaction } from './models/transaction.entity';
 import { TransactionModule } from './transaction/transaction.module';
 import { NotificationModule } from './notification/notification.module';
 import { Notification } from './models/notifications.entity';
+import { WaitList } from './models/waitlist.entity';
 
 
 // production Connection
@@ -26,7 +27,7 @@ import { Notification } from './models/notifications.entity';
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
-      entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
+      entities: [Person, User, Property, PropertyDetail, Wallet, Bank, Transaction, Notification, WaitList],
       synchronize: true,
       ssl: {
         rejectUnauthorized: false,
@@ -62,7 +63,7 @@ import { Notification } from './models/notifications.entity';
 //         username: configService.get('DB_USERNAME'),
 //         password: configService.get('DB_PASSWORD'),
 //         database: configService.get('DB_NAME'),
-//         entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction, Notification],
+//         entities: [User, Person, Property, PropertyDetail, Wallet, Bank, Transaction, Notification, WaitList],
 //         synchronize: true
 //       }),
 //       inject: [ConfigService],

@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Notification } from 'src/models/notifications.entity';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/user/services/user.service';
 import { Repository } from 'typeorm';
 // import { NotificationGateway } from './notification.gateway';
 import { CreateNotificationDto } from './notificationDto';

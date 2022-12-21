@@ -17,7 +17,7 @@ import {
   ForgotpasswordDto,
   TestnetFaucetDto,
   UserKYCDto,
-} from './userDto';
+} from '../dtos/userDto';
 import { PersonService } from 'src/person/person.service';
 // import { Person } from 'src/models/person.entity';
 import { MessageResponseDto, Roles } from 'src/utils/types';
@@ -31,8 +31,8 @@ import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { addresses } from 'src/web3/util/abi';
-import {provider} from '../web3/util/constants'
-import {balanceOf} from '../web3/erc20'
+import {provider} from '../../web3/util/constants'
+import {balanceOf} from '../../web3/erc20'
 
 // const polygonRPCProvider = ethers.getDefaultProvider(
 //   //"https://rpc.ankr.com/polygon"

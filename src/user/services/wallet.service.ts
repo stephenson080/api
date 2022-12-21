@@ -16,8 +16,8 @@ import {
 } from 'src/utils/types';
 import { Web3Wallet } from 'src/web3/wallet';
 import { Repository } from 'typeorm';
-import {addresses} from '../web3/util/abi'
-import {provider} from '../web3/util/constants'
+import {addresses} from '../../web3/util/abi'
+import {provider} from '../../web3/util/constants'
 
 @Injectable()
 export class Walletservice {

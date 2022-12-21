@@ -9,7 +9,7 @@ import { UtilModule } from 'src/util/util.module';
 import { ConfigService } from '@nestjs/config';
 import { NotificationService } from 'src/notification/notification.service';
 import { Notification } from 'src/models/notifications.entity';
-import { Walletservice } from 'src/user/wallet.service';
+import { Walletservice } from 'src/user/services/wallet.service';
 import { Wallet } from 'src/models/wallet.entity';
 
 @Module({

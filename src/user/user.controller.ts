@@ -39,7 +39,7 @@ import {
   TransactionCurrency,
   TransactionType,
 } from 'src/utils/types';
-import { UserService } from './user.service';
+import { UserService } from './services/user.service';
 import { UtilService } from '../util/util.service';
 import {
   AddBankDto,
@@ -54,19 +54,21 @@ import {
   TestnetFaucetDto,
   UserResponseDto,
   VerifyUserDto,
-} from './userDto';
+} from './dtos/userDto';
 import { PersonResponseDto } from '../person/personDto';
-import { CreateWalletDto, SendTransactionDto } from './walletDto';
+import { CreateWalletDto, SendTransactionDto } from './dtos/walletDto';
 import { TransactionService } from 'src/transaction/transaction.service';
-import { Walletservice } from './wallet.service';
-import { CreateOrderDto } from 'src/transaction/transactionDto';
+import { Walletservice } from './services/wallet.service';
+
 import { getAssetMetadata, getAssetBalance } from '../web3/asset';
 import { PropertyService } from 'src/property/property.service';
+import { WaitListService } from 'src/user/services/waitlist.service';
 import { NotificationService } from 'src/notification/notification.service';
 import {
   EditNotificationDto,
   NotificationResponseDto,
 } from 'src/notification/notificationDto';
+import { AddToWaitListDto } from './dtos/waitlistDtos';
 
 @ApiTags('User')
 @Controller('User')
@@ -79,6 +81,7 @@ export class UserController {
     private readonly walletService: Walletservice,
     private readonly propertyService: PropertyService,
     private readonly notificationService: NotificationService,
+    private readonly waitListService: WaitListService,
   ) {}
 
   @Post('login')
@@ -576,6 +579,14 @@ export class UserController {
         return 1;
       }),
     };
+  }
+
+  @ApiOkResponse({ description: 'Endpoint for Adding users to waitlist', type: MessageResponseDto })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @Post('/waitlist')
+  async addToWaitListHandler(@Body() addToWaitListDto: AddToWaitListDto) {
+    await this.waitListService.addToWaitList(addToWaitListDto)
+    return new MessageResponseDto('Success', 'Operation Successful')
   }
 
   @ApiBearerAuth()

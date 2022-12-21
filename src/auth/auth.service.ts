@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserService } from '../user/user.service';
+import { UserService } from '../user/services/user.service';
 import { User } from 'src/models/user.entity';
 import {compare} from 'bcrypt'
 

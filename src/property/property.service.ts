@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { unlink } from 'fs';
 import { Property } from 'src/models/property.entity';
 import { PropertyDetail } from 'src/models/propertyDetail.entity';
-import { UserService } from 'src/user/user.service';
+import { UserService } from 'src/user/services/user.service';
 import { UtilService } from 'src/util/util.service';
 import { Repository } from 'typeorm';
 import { AddPropertyDto, ListPropertyDto } from './propertyDto';
