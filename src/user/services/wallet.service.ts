@@ -162,7 +162,7 @@ export class Walletservice {
             
             tokenAddress: params[1],
             tokenAmount: +ethers.utils.formatUnits(params[2].toString(), 'wei'),
-            type: TransactionType.BUY_ASSET,
+            type: !params[3] ? TransactionType.BUY_ASSET : TransactionType.SELL_ASSET,
             paymentMethod: PaymentMethod.CRYPTO,
             assetId: params[0]
           };

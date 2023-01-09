@@ -130,30 +130,30 @@ export class UserController {
       );
     }
     if (user.wallet) delete user.wallet;
-    if (user.myAssets && user.myAssets.length > 0) {
-      if (walletAddress) {
-        const assets = await this.propertyService.getPropertiesByTokenIds(
-          user.myAssets,
-        );
-        for (let a of assets) {
-          try {
-            const data = await getAssetMetadata(a.tokenId);
-            myAssets.push({ ...a, metadata: data });
-          } catch (error) {
-            myAssets.push({
-              ...a,
-              metadata: {
-                name: 'Nil',
-                symbol: 'Nil',
-                totalSupply: 0,
-                vestingPeriod: 0,
-                costToDollar: 0,
-              },
-            });
-          }
-        }
-      }
-    }
+    // if (user.myAssets && user.myAssets.length > 0) {
+    //   if (walletAddress) {
+    //     const assets = await this.propertyService.getPropertiesByTokenIds(
+    //       user.myAssets,
+    //     );
+    //     for (let a of assets) {
+    //       try {
+    //         const data = await getAssetMetadata(a.tokenId);
+    //         myAssets.push({ ...a, metadata: data });
+    //       } catch (error) {
+    //         myAssets.push({
+    //           ...a,
+    //           metadata: {
+    //             name: 'Nil',
+    //             symbol: 'Nil',
+    //             totalSupply: 0,
+    //             vestingPeriod: 0,
+    //             costToDollar: 0,
+    //           },
+    //         });
+    //       }
+    //     }
+    //   }
+    // }
     return new UserResponseDto(user, walletAddress, uri, myAssets);
   }
 
@@ -539,14 +539,13 @@ export class UserController {
       contractFunction,
       sendTransactionDto.to,
     );
-    if (contractFunction === 'buyAsset') {
+    if (contractFunction === 'buyAsset' || (contract === 'swap' && !sendTransactionDto.params[3])) {
       this.notificationService.createNotification(req.user.userId, {
         title: 'Asset Purchase Successful',
         body: 'You just purchased an Asset. Check out the My Asset to view the transaction details',
       });
     }
-
-    if (contractFunction === 'sellAsset') {
+    if (contract === 'swap' && sendTransactionDto.params[3]) {
       this.notificationService.createNotification(req.user.userId, {
         title: 'Asset Sale Successful',
         body: 'You just Sold an Asset. Check out the My Asset to view the transaction details',
