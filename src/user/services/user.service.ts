@@ -33,6 +33,7 @@ import { Web3Wallet } from 'src/web3/wallet';
 import { addresses } from 'src/web3/util/abi';
 import {provider} from '../../web3/util/constants'
 import {balanceOf} from '../../web3/erc20'
+import { emailBody } from 'src/utils/emailTemplates';
 
 // const polygonRPCProvider = ethers.getDefaultProvider(
 //   //"https://rpc.ankr.com/polygon"
@@ -131,11 +132,7 @@ export class UserService {
         person: newPerson,
       });
       await this.createWallet(userObj.userId, user.password);
-      this.utilService.sendMail(
-        user.email,
-        'Welcome to Blockplot, your fractional real estate platform',
-        `Hello, ${user.fullName} your Registation was Successful`,
-      );
+      await this.utilService.sendEmailUsingSes(user.email, emailBody.SIGNUP, 'Welcome to Blockplot', user.fullName)
 
       return userObj;
     } catch (error) {
@@ -196,7 +193,7 @@ export class UserService {
 
       const _newUser = this.userRepo.create({
         email: newUser.email,
-        password: 'qwerty',
+        password: Date.now().toString().slice(0,10),
         role: Roles.USER,
         wallet,
       });
@@ -330,6 +327,8 @@ export class UserService {
         documentUrl: filePublicIds[0].url,
       });
 
+      await this.utilService.sendEmailUsingSes(user.email, emailBody.KYC, 'KYC Successful', user.person.fullName)
+
       return new MessageResponseDto(
         'Success',
         `Documents Upload Successful, Please wait, while we verify your details`,
@@ -390,11 +389,8 @@ export class UserService {
 
       // console.log(code);
 
-      this.utilService.sendMail(
-        user.email,
-        'Reset Password',
-        `We received a request to reset your password. Click the click below to reset password. Your code is: ${code}`,
-      );
+      await this.utilService.sendEmailUsingSes(user.email, `${emailBody.RESET_EMAIL} ${code}`, 'Reset Password', user.person.fullName)
+
       return new MessageResponseDto('Success', 'Email Sent');
     } catch (error) {
       throw error;
@@ -410,7 +406,7 @@ export class UserService {
       });
       if (!user)
         throw new BadRequestException({
-          message: 'This email Link has been used or it is invalid',
+          message: 'Invalid code',
         });
       const passordHash = await this.hashPassword(newPassword);
       if (user.wallet) {

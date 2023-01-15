@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { WaitList } from 'src/models/waitlist.entity';
 import { UtilService } from 'src/util/util.service';
+import { emailBody } from 'src/utils/emailTemplates';
 import { Repository } from 'typeorm';
 import { AddToWaitListDto } from '../dtos/waitlistDtos';
 
@@ -29,10 +30,6 @@ export class WaitListService {
 
     const waitList = this.waitlistRepo.create(addToWaitListDto);
     await this.waitlistRepo.save(waitList);
-    this.utilService.sendMail(
-      addToWaitListDto.email,
-      'Blockplot WaitList',
-      'Thanks for Showing Interest in Blockplot. We shall notify you when we launch.'
-    );
+    await this.utilService.sendEmailUsingSes(waitList.email, emailBody.WAITLIST, 'Blockplot waitlist', waitList.name)
   }
 }

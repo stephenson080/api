@@ -6,6 +6,7 @@ import {
 import { createTransport, Transporter } from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { Axios } from 'axios';
+import { SES, CloneReceiptRuleSetCommand } from '@aws-sdk/client-ses';
 import {
   v2 as cloudinary,
   UploadApiResponse,
@@ -15,8 +16,9 @@ import { v4 as uuid } from 'uuid';
 import { createWriteStream, unlinkSync } from 'fs';
 import { join } from 'path';
 
-import {OrderInitiateDto} from '../transaction/transactionDto'
-import { TransactionCurrency,MessageResponseDto } from 'src/utils/types';
+import { OrderInitiateDto } from '../transaction/transactionDto';
+import { TransactionCurrency, MessageResponseDto } from 'src/utils/types';
+import { getEmailTemplate } from 'src/utils/emailTemplates';
 
 type uploadfile = { path: string; type: string };
 
@@ -25,7 +27,10 @@ export class UtilService {
   transporter: Transporter;
   paystackHTTP: Axios;
   flutterwaveHttp: Axios;
+  sesClient: SES;
+  supportEmail: string;
   constructor(private readonly configService: ConfigService) {
+    this.supportEmail = this.configService.get('SUPPORT_EMAIL');
     this.transporter = createTransport({
       service: 'gmail',
       auth: {
@@ -41,15 +46,20 @@ export class UtilService {
 
     this.paystackHTTP = new Axios({
       headers: {
-        
         Authorization: `Bearer ${this.configService.get('PAYSTACK_KEY')}`,
       },
     });
 
     this.flutterwaveHttp = new Axios({
       headers: {
-        
         Authorization: `Bearer ${this.configService.get('FLUTTERWAVE_KEY')}`,
+      },
+    });
+    this.sesClient = new SES({
+      region: this.configService.get('REGION'),
+      credentials: {
+        accessKeyId: this.configService.get('AWS_ACCESS'),
+        secretAccessKey: this.configService.get('AWS_SECRET')
       },
     });
   }
@@ -199,7 +209,8 @@ export class UtilService {
           throw new BadRequestException({
             message: `${file} must be an image`,
           });
-        if (fileObj.size > 2000000) // change file size to 200kb
+        if (fileObj.size > 2000000)
+          // change file size to 200kb
           throw new BadRequestException({
             message: `${file} should not be more than 200kb`,
           });
@@ -249,38 +260,71 @@ export class UtilService {
     await cloudinary.uploader.destroy(publicId);
   }
 
-  async initiatePaystackPayment(email: string, amount: string, currency: TransactionCurrency) : Promise<OrderInitiateDto> {
+  async initiatePaystackPayment(
+    email: string,
+    amount: string,
+    currency: TransactionCurrency,
+  ): Promise<OrderInitiateDto> {
     try {
       const res = await this.paystackHTTP.post(
         `https://api.paystack.co/transaction/initialize`,
-        JSON.stringify({email, amount, currency}),
+        JSON.stringify({ email, amount, currency }),
       );
-      
-      return JSON.parse(res.data)
+
+      return JSON.parse(res.data);
     } catch (error) {
       throw new UnprocessableEntityException({ message: error.message });
     }
   }
 
-  async verifyPaystackPayment(reference: string){
+  async verifyPaystackPayment(reference: string) {
     try {
-      const res = await this.paystackHTTP.get(`https://api.paystack.co/transaction/verify/${reference}`)
-      const data = JSON.parse(res.data)
-      return data
-      
+      const res = await this.paystackHTTP.get(
+        `https://api.paystack.co/transaction/verify/${reference}`,
+      );
+      const data = JSON.parse(res.data);
+      return data;
     } catch (error) {
-      throw new UnprocessableEntityException({message: error.message})
+      throw new UnprocessableEntityException({ message: error.message });
     }
   }
 
-  async verifyFlutterwavePayment(reference: string){
+  async verifyFlutterwavePayment(reference: string) {
     try {
-      const res = await this.flutterwaveHttp.get(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`)
-      const data = JSON.parse(res.data)
-      return data
+      const res = await this.flutterwaveHttp.get(
+        `https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${reference}`,
+      );
+      const data = JSON.parse(res.data);
+      return data;
     } catch (error) {
-      throw new UnprocessableEntityException({message: error.message})
+      throw new UnprocessableEntityException({ message: error.message });
     }
   }
 
+  async sendEmailUsingSes(recieveEmail: string, body: string, subject: string, name: string) {
+    try {
+      const template = getEmailTemplate(name, body, 'waitlist')
+      await this.sesClient.sendEmail({
+        Destination: {
+          ToAddresses: [recieveEmail],
+        },
+        Message: {
+          Body: {
+            Html: {
+              Charset: 'UTF-8',
+              Data: template,
+            },
+          },
+          Subject: {
+            Data: subject,
+            Charset: 'UTF-8',
+          },
+        },
+        Source: this.supportEmail,
+        ReplyToAddresses: [this.supportEmail],
+      });
+    } catch (error) {
+      console.log(error, 'email error');
+    }
+  }
 }
