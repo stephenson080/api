@@ -57,7 +57,7 @@ import {
 } from './dtos/userDto';
 import { PersonResponseDto } from '../person/personDto';
 import { CreateWalletDto, SendTransactionDto } from './dtos/walletDto';
-import { TransactionService } from 'src/transaction/transaction.service';
+import { TransactionService } from 'src/transaction/services/transaction.service';
 import { Walletservice } from './services/wallet.service';
 
 import { getAssetMetadata, getAssetBalance } from '../web3/asset';

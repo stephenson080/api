@@ -8,6 +8,7 @@ import {
 import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionCurrency, TransactionType, PaymentMethod } from 'src/utils/types';
+import { Any } from 'typeorm';
 
 export class CreateOrderDto {
 
@@ -129,5 +130,109 @@ export class TransactionResponseDto {
   constructor(trx: Partial<any>){
       Object.assign(this, trx)
   }
+}
+
+export class XendBridgeRateDto {
+  @ApiProperty({ type: Number, required: true })
+  orderAmount: number;
+
+  @ApiProperty({ type: String, required: true })
+  receiveInCurrencyNetwork: string;
+
+  @ApiProperty({ type: String, required: true })
+  payInCurrencyCode: string;
+
+  @ApiProperty({ type: String, required: true })
+  payInCurrencyNetwork: string;
+
+  @ApiProperty({ type: String, required: true })
+  receiveInCurrencyCode: string;
+
+}
+
+interface XBRateData  {
+  exchangeRate: number
+  maximumAmount: number
+  minimumAmount: number
+  rateValidityInSeconds: number
+}
+
+interface XB_Bank {
+  bankName: string,
+  accountNumber: string,
+  accountName: string,
+  address: string,
+  swiftCode: string,
+  iban: string,
+  sortCode: string,
+  currency: string,
+  network: string
+}
+interface XBBuyOrderData  {
+  payableAmount: number
+  orderExpiryDate: string
+  providerPaymentMethods: {
+    paymentMethod: string,
+    paymentType: string,
+    paymentData:  XB_Bank[],
+    orderPaymentMethod: XB_Bank
+  },
+}
+export class XendBridgeRateResponseDto {
+  @ApiProperty({ type: Any })
+  data: XBRateData;
+
+  @ApiProperty({ type: String })
+  message: string;
+
+  @ApiProperty({ type: String })
+  status: string;
+}
+
+export class XendBridgeOrderDto {
+  @ApiProperty({ type: Number, required: true })
+  orderAmount: number;
+
+  @ApiProperty({ type: String, required: true })
+  receiveInCurrencyCode: string;
+  @ApiProperty({ type: String, required: true })
+  receiveInCurrencyNetwork: string;
+  @ApiProperty({ type: String, required: true })
+  payInCurrencyNetwork: string;
+  @ApiProperty({ type: String, required: true })
+  payInCurrencyCode: string;
+  @ApiProperty({ type: String, required: true })
+  bankId: string;
+  @ApiProperty({ type: String, required: true })
+  paymentMethod: string;
+  @ApiProperty({ type: String, required: true })
+  recieveMethod: string;
+}
+
+export class XendBridgeBuyOrderResponseDto {
+  @ApiProperty({ type: String, required: true })
+  status: string;
+  @ApiProperty({ type: String, required: true })
+  message: string;
+  @ApiProperty({ type: Any, required: true })
+  data: XendBridgeBuyOrderResponseDto;
+  
+}
+
+export class XendBridgeCancelOrderDto {
+  @ApiProperty({ type: String, required: true })
+  emailAddress: string;
+  @ApiProperty({ type: String, required: true })
+  orderReference: string;  
+}
+
+export class XendBridgeCancelOrderReponseDto {
+  @ApiProperty({ type: String, required: true })
+  status: string;
+  @ApiProperty({ type: String, required: true })
+  message: string;
+  
+  @ApiProperty({ type: Boolean, required: true })
+  data: boolean;
 }
 

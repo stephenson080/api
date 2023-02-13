@@ -18,12 +18,12 @@ import {
   CreateOrderDto,
   OrderInitiateDto,
   VerifyPaymentDto,
-} from './transactionDto';
+} from '../transactionDto';
 import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { NotificationService } from 'src/notification/notification.service';
-import {provider} from '../web3/util/constants'
+import {provider} from '../../web3/util/constants'
 import { Walletservice } from 'src/user/services/wallet.service';
 // const polygonRPCProvider = ethers.getDefaultProvider(
 //   //"https://rpc.ankr.com/polygon"

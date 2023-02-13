@@ -6,7 +6,7 @@ import {
 import { createTransport, Transporter } from 'nodemailer';
 import { ConfigService } from '@nestjs/config';
 import { Axios } from 'axios';
-import { SES, CloneReceiptRuleSetCommand } from '@aws-sdk/client-ses';
+import { SES } from '@aws-sdk/client-ses';
 import {
   v2 as cloudinary,
   UploadApiResponse,

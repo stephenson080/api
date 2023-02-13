@@ -15,7 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { Walletservice } from './services/wallet.service';
 import { NotificationService } from 'src/notification/notification.service';
 import { PropertyService } from 'src/property/property.service';
-import { TransactionService } from 'src/transaction/transaction.service';
+import { TransactionService } from 'src/transaction/services/transaction.service';
 import { AuthService } from 'src/auth/auth.service';
 import { UserService } from './services/user.service';
 import { WaitListService } from './services/waitlist.service';
