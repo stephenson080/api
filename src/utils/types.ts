@@ -32,12 +32,14 @@ export enum TransactionCurrency {
   NAIRA = 'NGN',
   CEDIS = 'GHC',
   DOLLARS = 'USD',
+  CRYPTO='CRYPTO'
 }
 
 export enum  PaymentMethod {
   PAYSTACK = 'PAYSTACK',
   FLUTTERWAVE = 'FLUTTERWAVE',
   CRYPTO = 'CRYPTO',
+  BANK='BANK'
 }
 
 export class MessageResponseDto {

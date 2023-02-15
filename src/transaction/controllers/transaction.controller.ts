@@ -39,7 +39,11 @@ import {
   XendBridgeOrderDto,
   XendBridgeCancelOrderDto,
   XendBridgeBuyOrderResponseDto,
-  XendBridgeCancelOrderReponseDto
+  XendBridgeCancelOrderReponseDto,
+  LpConfirmXendBridgeOrderDto,
+  XendBridgeSellOrderResponseDto,
+  ConfirmXendBridgeOrderDto,
+  XendBridgeConfirmOrderReponseDto
 } from '../transactionDto';
 
 @ApiTags('Transaction')
@@ -147,5 +151,59 @@ export class TransactionController {
   async cancelXendBridgeOrder(@Request() req, @Body() cancelOrderDto :XendBridgeCancelOrderDto) {
     if (!req.user) throw new UnauthorizedException({message: 'Not authorised'})
     return await this.xendBridgeService.cancelXendBridgeOrder(req.user.userId, cancelOrderDto)
+  }
+
+  @ApiBearerAuth()
+  @Get('xendbridge/pending-order')
+  @ApiOkResponse({
+    description: 'Get Xendbrigde Pending Order',
+    type: Any,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  async getXendBridgePendingOrder(@Request() req) {
+    if (!req.user) throw new UnauthorizedException({message: 'Not authorised'})
+    return await this.xendBridgeService.getXendBridgePendingOrder(req.user.userId)
+  }
+
+  @ApiBearerAuth()
+  @Post('xendbridge/initiate-sell-order')
+  @ApiOkResponse({
+    description: 'Initiate Xendbrigde Sell Order',
+    type: XendBridgeSellOrderResponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  async initiateXendBridgeSellOrder(@Request() req, @Body() orderDto: XendBridgeOrderDto) {
+    if (!req.user) throw new UnauthorizedException({message: 'Not authorised'})
+    return await this.xendBridgeService.xendBridgeSellOrder(req.user.userId, orderDto)
+  }
+
+  @ApiBearerAuth()
+  @Post('xendbridge/pay-for-order')
+  @ApiOkResponse({
+    description: 'Pay for Xendbrigde Order',
+    type: XendBridgeConfirmOrderReponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  async payforXendBridgeOrder(@Request() req, @Body() confirmXendBridgeOrderDto: ConfirmXendBridgeOrderDto) {
+    if (!req.user) throw new UnauthorizedException({message: 'Not authorised'})
+    return await this.xendBridgeService.userConfirmXendBridgeOrder(req.user.userId, confirmXendBridgeOrderDto)
+  }
+
+  // simulation only for sandbox environment
+  @ApiBearerAuth()
+  @Post('xendbridge/lp-simulate-order')
+  @ApiOkResponse({
+    description: 'LP Simulate confirm order',
+    type: XendBridgeConfirmOrderReponseDto,
+  })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  async lpSimulateXendBridgeOrder(@Request() req, @Body() lpConfirmXendBridgeOrderDto: LpConfirmXendBridgeOrderDto) {
+    if (!req.user) throw new UnauthorizedException({message: 'Not authorised'})
+    const trx = await this.xendBridgeService.LpConfirmXendBridgeOrder(req.user.userId, lpConfirmXendBridgeOrderDto)
+    return new TransactionResponseDto(trx)
   }
 }

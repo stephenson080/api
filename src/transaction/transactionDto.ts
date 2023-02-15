@@ -157,7 +157,7 @@ interface XBRateData  {
   rateValidityInSeconds: number
 }
 
-interface XB_Bank {
+export interface XB_Bank {
   bankName: string,
   accountNumber: string,
   accountName: string,
@@ -168,14 +168,47 @@ interface XB_Bank {
   currency: string,
   network: string
 }
+
+export interface Xb_Wallet {
+  walletAddress: string
+  network: string
+  currency: string
+}
 interface XBBuyOrderData  {
+  orderReference: string
   payableAmount: number
+  receivableAmount: number
   orderExpiryDate: string
   providerPaymentMethods: {
     paymentMethod: string,
     paymentType: string,
     paymentData:  XB_Bank[],
     orderPaymentMethod: XB_Bank
+  },
+}
+interface XBSellOrderData  {
+  orderReference: string
+  receivableAmount: number
+  payableAmount: number
+  orderExpiryDate: string
+  providerPaymentMethods: {
+    paymentMethod: string,
+    paymentType: string,
+    paymentData:  Xb_Wallet[],
+    orderPaymentMethod: Xb_Wallet
+  },
+}
+
+interface XBPendingOrderData<T>  {
+  orderReference: string
+  receivableAmount: number
+  orderExpiryDate: string
+  orderType: string
+  providerPaymentMethods: {
+    paymentMethod: string,
+    paymentType: string,
+    paymentData:  T[],
+    orderPaymentMethod: T
   },
 }
 export class XendBridgeRateResponseDto {
@@ -215,15 +248,54 @@ export class XendBridgeBuyOrderResponseDto {
   @ApiProperty({ type: String, required: true })
   message: string;
   @ApiProperty({ type: Any, required: true })
-  data: XendBridgeBuyOrderResponseDto;
+  data: XBBuyOrderData;
   
 }
 
+export class XendBridgeSellOrderResponseDto {
+  @ApiProperty({ type: String, required: true })
+  status: string;
+  @ApiProperty({ type: String, required: true })
+  message: string;
+  @ApiProperty({ type: Any, required: true })
+  data: XBSellOrderData;
+  
+}
+export class XendBridgePendingOrderResponseDto<T> {
+  @ApiProperty({ type: Any })
+  data: {
+    orderResponse: XBPendingOrderData<T>
+  }
+
+  @ApiProperty({ type: String })
+  message: string;
+
+  @ApiProperty({ type: String })
+  status: string;
+}
 export class XendBridgeCancelOrderDto {
   @ApiProperty({ type: String, required: true })
   emailAddress: string;
   @ApiProperty({ type: String, required: true })
   orderReference: string;  
+}
+
+export class ConfirmXendBridgeOrderDto {
+  @ApiProperty({ type: String, required: true })
+  emailAddress: string;
+  @ApiProperty({ type: String, required: true })
+  orderReference: string;
+  @ApiProperty({ type: String, required: false })
+  transactionHash?: string;  
+}
+
+export class LpConfirmXendBridgeOrderDto {
+  @ApiProperty({ type: String, required: true })
+  orderReference: string;
+  @ApiProperty({ type: String, required: false })
+  paymentNetwork?: string;
+  @ApiProperty({ type: String, required: false })
+  transactionHash?: string;  
 }
 
 export class XendBridgeCancelOrderReponseDto {
@@ -233,6 +305,16 @@ export class XendBridgeCancelOrderReponseDto {
   message: string;
   
   @ApiProperty({ type: Boolean, required: true })
+  data: boolean;
+}
+
+export class XendBridgeConfirmOrderReponseDto {
+  @ApiProperty({ type: String })
+  status: string;
+  @ApiProperty({ type: String })
+  message: string;
+  
+  @ApiProperty({ type: Boolean })
   data: boolean;
 }
 
