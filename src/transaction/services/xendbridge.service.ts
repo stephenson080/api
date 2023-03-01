@@ -114,8 +114,8 @@ export class XendBridgeService {
         `${XENDBRIDGE_BASE_URL}/peertopeerorder/buy/initiate`,
         JSON.stringify({ ...body }),
       );
-      if (!res.data) {
-        throw new BadRequestException({ message: res.statusText });
+      if (!res.data || !(JSON.parse(res.data)).data) {
+        throw new BadRequestException({ message: (JSON.parse(res.data)).Message || res.statusText || 'Could not initiate Order' });
       }
       const data: XendBridgeBuyOrderResponseDto = JSON.parse(res.data)
       if (!data.data) {
@@ -269,9 +269,8 @@ export class XendBridgeService {
         throw new BadRequestException({ message: res.statusText });
       }
       const _data = JSON.parse(res.data);
-
       if (!_data.data.orderResponse) {
-        throw new Error(_data.messsage)
+        throw new Error('No Pending Order')
       }
       if (_data.data.orderResponse.orderType === 'Sell') {
         const data: XendBridgePendingOrderResponseDto<Xb_Wallet> = _data;

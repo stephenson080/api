@@ -20,6 +20,12 @@ export class EditNotificationDto {
     ids: string[]
 }
 
+export class DeleteNotifcationDto{
+    @ApiProperty({type: [String], required: true})
+    @IsArray()
+    ids: string[]
+}
+
 export class NotificationResponseDto {
     @ApiProperty({type: String})
     notificationId: string
@@ -33,7 +39,7 @@ export class NotificationResponseDto {
     @ApiProperty({type: String})
     updateAt: Date
 
-    @Exclude()
+    @ApiProperty()
     createdAt: Date
     
     @ApiProperty({type: Boolean})

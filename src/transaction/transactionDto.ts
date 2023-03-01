@@ -9,6 +9,7 @@ import { Exclude } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 import { TransactionCurrency, TransactionType, PaymentMethod } from 'src/utils/types';
 import { Any } from 'typeorm';
+import { formatDate } from 'src/utils/helpers';
 
 export class CreateOrderDto {
 
@@ -116,10 +117,6 @@ export class TransactionResponseDto {
 
   @ApiProperty({type: String})
   updatedAt: Date
-
-
-  @ApiProperty({type: String})
-  twoFAUri: string
 
   @ApiProperty()
   bank: any

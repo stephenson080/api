@@ -2,6 +2,7 @@ import {IsNotEmpty, IsString, IsEmail, IsArray, IsBoolean} from 'class-validator
 import {Exclude} from 'class-transformer'
 import {ApiProperty} from '@nestjs/swagger'
 import {Roles} from '../../utils/types'
+import {formatDate} from '../../utils/helpers'
 import { PersonResponseDto } from 'src/person/personDto'
 export class CreateUserDto {
 
@@ -79,13 +80,12 @@ export class UserResponseDto {
     twoFAUri: string
 
     @ApiProperty()
-    myAssets: any
+    banks: any[]
 
-    constructor(user: Partial<any>, wallet: string, uri: string, myAssets: any){
+    constructor(user: Partial<any>, wallet: string, uri: string){
         Object.assign(this, user)
         this.walletAddress = wallet
         this.twoFAUri= uri
-        this.myAssets = myAssets
     }
 }
 
@@ -169,6 +169,7 @@ export class AddBankDto {
     @IsNotEmpty()
     accountNumber: string
 }
+
 
 export class ChangePasswordDto {
     @ApiProperty({type: String, required: true})

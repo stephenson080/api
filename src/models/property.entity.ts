@@ -35,7 +35,7 @@ import { User } from './user.entity';
     @Column({ nullable: true })
     currentPrice: number;
 
-    @Column({ type: 'timestamp without time zone', default: new Date() })
+    @Column({ type: 'timestamp without time zone' })
     createdAt: Date;
 
     @Column({ type: 'boolean', default: true })
@@ -44,7 +44,7 @@ import { User } from './user.entity';
     @Column({ type: 'boolean', default: false })
     isListed: boolean;
 
-    @Column({ type: 'timestamp without time zone', default: new Date() })
+    @Column({ type: 'timestamp without time zone' })
     updatedAt: Date;
 
     @OneToOne(() => PropertyDetail)

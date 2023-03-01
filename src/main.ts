@@ -26,8 +26,8 @@ async function bootstrap() {
     .setVersion('1.0.0')
     .setContact(
       'Blockplot',
-      'https://github.com/Team-Luminous-Repo/scelta-api',
-      'stevepathagoragoras08@gmail.com',
+      'https://blockplot.org',
+      'Support@blockplot.org',
     )
     .addTag('EndPoints')
     .build();

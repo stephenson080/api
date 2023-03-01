@@ -23,7 +23,7 @@ import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { NotificationService } from 'src/notification/notification.service';
-import {provider} from '../../web3/util/constants'
+import { provider } from '../../web3/util/constants';
 import { Walletservice } from 'src/user/services/wallet.service';
 // const polygonRPCProvider = ethers.getDefaultProvider(
 //   //"https://rpc.ankr.com/polygon"
@@ -58,21 +58,26 @@ export class TransactionService {
       throw new BadRequestException({
         message: 'Please Complete your Kyc before you can use this Service',
       });
-    // if (user.banks.length <= 0)
-    //   throw new BadRequestException({
-    //     message: 'Please add a bank before you can make an order',
-    //   });
+    if (user.banks.length <= 0)
+      throw new BadRequestException({
+        message: 'Please add a bank before you can make an order',
+      });
     let order: Transaction;
     if (!crypto) {
-      // const bank = user.banks.find((b) => b.bankId === createOrderDto.bankId);
-      // if (!bank)
-      //   throw new BadRequestException({ message: 'Please Select a Bank' });
+      const bank = user.banks.find((b) => b.bankId === createOrderDto.bankId);
+      if (!bank)
+        throw new BadRequestException({ message: 'Please Select a Bank' });
 
       order = this.transactionRepo.create({
         ...createOrderDto,
         user,
+        bank
       });
-      return await this.transactionRepo.save(order);
+      return await this.transactionRepo.save({
+        ...order,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
     }
 
     order = this.transactionRepo.create({
@@ -81,7 +86,11 @@ export class TransactionService {
       isVerified: true,
       user,
     });
-    return await this.transactionRepo.save(order);
+    return await this.transactionRepo.save({
+      ...order,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   }
 
   async verifyPayment(reference: string, userId: string) {
@@ -120,21 +129,16 @@ export class TransactionService {
           title: 'Wallet Funding Successful',
         });
         await this.editTransaction(existTrx.orderId, { isVerified: true });
-        this.userService.editUser(user.userId, {fundWallet: true})
-        if (user.wallet && user.wallet.walletAddress){
-          this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress)
+        this.userService.editUser(user.userId, { fundWallet: true });
+        if (user.wallet && user.wallet.walletAddress) {
+          this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress);
         }
         const notifications =
           await this.notificationService.getUsersNotifications(user.userId);
         const msg = new MessageResponseDto('Success', `Transaction Successful`);
         return {
           message: msg,
-          notifications: notifications.sort((n1, n2) => {
-            if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-              return -1;
-            }
-            return 1;
-          }),
+          notifications: notifications
         };
       }
       throw new UnprocessableEntityException({
@@ -166,21 +170,16 @@ export class TransactionService {
         title: 'Wallet Funding Successful',
       });
       await this.editTransaction(existTrx.orderId, { isVerified: true });
-      this.userService.editUser(user.userId, {fundWallet: true})
-      if (user.wallet && user.wallet.walletAddress){
-        this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress)
+      this.userService.editUser(user.userId, { fundWallet: true });
+      if (user.wallet && user.wallet.walletAddress) {
+        this.walletService.sendUserSomeNativeToken(user.wallet.walletAddress);
       }
       const notifications =
         await this.notificationService.getUsersNotifications(user.userId);
       const msg = new MessageResponseDto('Success', `Transaction Successful`);
       return {
         message: msg,
-        notifications: notifications.sort((n1, n2) => {
-          if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-            return -1;
-          }
-          return 1;
-        }),
+        notifications: notifications
       };
     }
     throw new UnprocessableEntityException({
@@ -191,20 +190,20 @@ export class TransactionService {
   async getUsersTransactions(userId: string, isVerified?: boolean) {
     return await this.transactionRepo.find({
       relations: { bank: true },
-      where: { isVerified, user: { userId } },
+      where: { isVerified, user: { userId } }, order: {createdAt: {direction: 'ASC'}},
     });
   }
 
   async getAllTransaction(isVerified?: boolean) {
     return await this.transactionRepo.find({
       relations: { user: true, bank: true },
-      where: { isVerified },
+      where: { isVerified }, order: {createdAt: {direction: 'ASC'}},
     });
   }
 
   async getTransactionByReferenceId(reference: string) {
     return await this.transactionRepo.findOne({
-      relations: { user: true },
+      relations: { user: true, },
       where: { reference },
     });
   }
@@ -212,6 +211,7 @@ export class TransactionService {
   async editTransaction(orderId: string, editdto: any) {
     const order = await this.transactionRepo.findOneBy({ orderId });
     if (!order) throw new BadRequestException({ message: 'No Order found' });
+    editdto.updatedAt = new Date()
     await this.transactionRepo.save({ ...order, ...editdto });
   }
 }

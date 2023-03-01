@@ -48,13 +48,13 @@ export class Transaction {
   })
   paymentMethod: PaymentMethod;
 
-  @Column({ type: 'timestamp without time zone', default: new Date() })
+  @Column({ type: 'timestamp without time zone' })
   createdAt: Date;
 
   @Column({ type: 'boolean', default: false })
   isVerified: boolean;
 
-  @Column({ type: 'timestamp without time zone', default: new Date() })
+  @Column({ type: 'timestamp without time zone' })
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.orders)

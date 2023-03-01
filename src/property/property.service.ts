@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { unlink } from 'fs';
 import { Property } from 'src/models/property.entity';
@@ -45,7 +49,9 @@ export class PropertyService {
         message: 'Something went wrong. Contact Support',
       });
     if (!user.isVerified)
-      throw new UnauthorizedException({message :  "You can't use this service because you haven't been verified"})
+      throw new UnauthorizedException({
+        message: "You can't use this service because you haven't been verified",
+      });
     let imagesPublicIds: { public_id: string; url: string }[] = [];
     let documentsPublicIds: { public_id: string; url: string }[] = [];
     const uploadImageFiles = await this.utilService.uploadPropertyImages(
@@ -101,7 +107,11 @@ export class PropertyService {
       landSize: property.landSize ? property.landSize : null,
       stories: property.stories ? property.stories : null,
     });
-    const details = await this.detailRepo.save(detObj);
+    const details = await this.detailRepo.save({
+      ...detObj,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     const prop = this.propertyRepo.create({
       details,
       name: property.name,
@@ -110,7 +120,11 @@ export class PropertyService {
       user,
     });
 
-    await this.propertyRepo.save(prop);
+    await this.propertyRepo.save({
+      ...prop,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   }
 
   async getProperties(isListed?: boolean, userId?: string, tokenId?: number) {
@@ -122,23 +136,24 @@ export class PropertyService {
         { user: { userId } },
       ],
       relations: { details: true },
+      order: {createdAt: 'ASC'}
     });
   }
 
-  async getPropertiesByTokenIds(tokenIds: number[]){
-    const properties : Property[] = []
-    for (let id of tokenIds){
-      const property = await this.getPerperty(undefined, +id, undefined)
-      properties.push(property)
+  async getPropertiesByTokenIds(tokenIds: number[]) {
+    const properties: Property[] = [];
+    for (let id of tokenIds) {
+      const property = await this.getPerperty(undefined, +id, undefined);
+      properties.push(property);
     }
-    return properties
+    return properties;
   }
-
 
   async getAllProperties(isListed: boolean) {
     return await this.propertyRepo.find({
       where: { isListed },
       relations: { details: true },
+      order: {createdAt: 'ASC'}
     });
   }
 

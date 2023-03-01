@@ -1,4 +1,5 @@
 import { Entity, PrimaryColumn, Column, Generated, ManyToOne, OneToMany } from 'typeorm';
+import moment from 'moment'
 import { Transaction } from './transaction.entity';
 import { User } from './user.entity';
 
@@ -17,13 +18,13 @@ export class Bank {
   @Column({ nullable: false })
   accountNumber: string;
 
-  @Column({ type: 'timestamp without time zone', default: new Date() })
+  @Column({ type: 'timestamp without time zone',})
   createdAt: Date;
 
   @Column({ type: 'boolean', default: false })
   isVerified: boolean;
 
-  @Column({ type: 'timestamp without time zone', default: new Date() })
+  @Column({ type: 'timestamp without time zone'})
   updatedAt: Date;
 
   @ManyToOne(() => User, (user) => user.banks)

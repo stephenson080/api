@@ -31,8 +31,8 @@ import { ethers } from 'ethers';
 import { ConfigService } from '@nestjs/config';
 import { Web3Wallet } from 'src/web3/wallet';
 import { addresses } from 'src/web3/util/abi';
-import {provider} from '../../web3/util/constants'
-import {balanceOf} from '../../web3/erc20'
+import { provider } from '../../web3/util/constants';
+import { balanceOf } from '../../web3/erc20';
 import { emailBody } from 'src/utils/emailTemplates';
 
 // const polygonRPCProvider = ethers.getDefaultProvider(
@@ -60,8 +60,11 @@ export class UserService {
     return user;
   }
 
-  async getUserByWallet(walletAddress: string){
-    return await this.userRepo.findOne({where: {wallet: {walletAddress}}, relations: {wallet: true, person: true}})
+  async getUserByWallet(walletAddress: string) {
+    return await this.userRepo.findOne({
+      where: { wallet: { walletAddress } },
+      relations: { wallet: true, person: true },
+    });
   }
 
   async createUser(user: CreateUserDto, file?: Express.Multer.File) {
@@ -112,14 +115,14 @@ export class UserService {
         return await this.userRepo.save({
           ...newUser,
           person: newPerson,
+          createdAt: new Date(),
+          updatedAt: new Date(),
         });
       }
-      const newPerson = await this.personService.createPerson(
-        {
-          phone: user.phone,
-          fullName: user.fullName,
-        }
-      );
+      const newPerson = await this.personService.createPerson({
+        phone: user.phone,
+        fullName: user.fullName,
+      });
       const newUser = this.userRepo.create({
         email: user.email,
         password: passwordHash,
@@ -130,9 +133,16 @@ export class UserService {
       const userObj = await this.userRepo.save({
         ...newUser,
         person: newPerson,
+        createdAt: new Date(),
+        updatedAt: new Date(),
       });
       await this.createWallet(userObj.userId, user.password);
-      await this.utilService.sendEmailUsingSes(user.email, emailBody.SIGNUP, 'Welcome to Blockplot', user.fullName)
+      await this.utilService.sendEmailUsingSes(
+        user.email,
+        emailBody.SIGNUP,
+        'Welcome to Blockplot',
+        user.fullName,
+      );
 
       return userObj;
     } catch (error) {
@@ -159,7 +169,9 @@ export class UserService {
       let wallet: Wallet;
       const existUser = await this.getUserByEmail(newUser.email);
       if (existUser)
-        throw new Error(`An Account with Username ${newUser.email} Already exist`);
+        throw new Error(
+          `An Account with Username ${newUser.email} Already exist`,
+        );
       const existPerson = await this.personService.getPerson(newUser.phone);
       if (existPerson)
         throw new Error(
@@ -193,12 +205,17 @@ export class UserService {
 
       const _newUser = this.userRepo.create({
         email: newUser.email,
-        password: Date.now().toString().slice(0,10),
+        password: Date.now().toString().slice(0, 10),
         role: Roles.USER,
         wallet,
       });
 
-      await this.userRepo.save({ ..._newUser, person: newPerson });
+      await this.userRepo.save({
+        ..._newUser,
+        person: newPerson,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
 
       return new MessageResponseDto(
         'Success',
@@ -275,23 +292,33 @@ export class UserService {
     });
   }
   async demoKyc(walletAddress: string, custodial: boolean) {
-    let user : User
-    const wallet = new ethers.Wallet(this.configService.get('KEY2'), provider)
-    if (!wallet) throw new BadRequestException({message: 'Invalid Wallet'})
-    if (custodial){
-      user = await this.getUserByWallet(walletAddress)
-      if (!user.wallet) throw new BadRequestException({message: 'No Wallet Found'})
+    let user: User;
+    const wallet = new ethers.Wallet(this.configService.get('KEY2'), provider);
+    if (!wallet) throw new BadRequestException({ message: 'Invalid Wallet' });
+    if (custodial) {
+      user = await this.getUserByWallet(walletAddress);
+      if (!user.wallet)
+        throw new BadRequestException({ message: 'No Wallet Found' });
     }
     try {
-      await Web3Wallet.sendTransaction(wallet, [walletAddress], 'identity', 'verify', addresses.identity)
+      await Web3Wallet.sendTransaction(
+        wallet,
+        [walletAddress],
+        'identity',
+        'verify',
+        addresses.identity,
+      );
     } catch (error) {
-      throw new UnprocessableEntityException({message: 'Could not Verify your account. If it persists contact Support'})
+      throw new UnprocessableEntityException({
+        message:
+          'Could not Verify your account. If it persists contact Support',
+      });
     }
-    
-    if (user){
-      await this.editUser(user.userId, {isVerified: true})
+
+    if (user) {
+      await this.editUser(user.userId, { isVerified: true });
     }
-    return new MessageResponseDto('Success', 'Your Account has been Verified')
+    return new MessageResponseDto('Success', 'Your Account has been Verified');
   }
   async userKyc(userId: string, files: { path: string; type: string }[]) {
     let filePublicIds: { public_id: string; url: string }[] = [];
@@ -327,7 +354,12 @@ export class UserService {
         documentUrl: filePublicIds[0].url,
       });
 
-      await this.utilService.sendEmailUsingSes(user.email, emailBody.KYC, 'KYC Successful', user.person.fullName)
+      await this.utilService.sendEmailUsingSes(
+        user.email,
+        emailBody.KYC,
+        'KYC Successful',
+        user.person.fullName,
+      );
 
       return new MessageResponseDto(
         'Success',
@@ -389,7 +421,12 @@ export class UserService {
 
       // console.log(code);
 
-      await this.utilService.sendEmailUsingSes(user.email, `${emailBody.RESET_EMAIL} ${code}`, 'Reset Password', user.person.fullName)
+      await this.utilService.sendEmailUsingSes(
+        user.email,
+        `${emailBody.RESET_EMAIL} ${code}`,
+        'Reset Password',
+        user.person.fullName,
+      );
 
       return new MessageResponseDto('Success', 'Email Sent');
     } catch (error) {
@@ -546,23 +583,74 @@ export class UserService {
         message: 'please Complete your KYC before you can use this service',
       });
     const bank = this.bankRepo.create(addBankDto);
-    const newBank = await this.bankRepo.save(bank);
+    const newBank = await this.bankRepo.save({
+      ...bank,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     await this.userRepo.save({
       ...user,
       banks: [...user.banks, newBank],
       updatedAt: new Date(),
     });
   }
+  async deleteBank(userId: string, bankId: string) {
+    const user = await this.getUserById(userId);
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'You are not unthorised to use this service',
+      });
+    if (!user.isVerified)
+      throw new BadRequestException({
+        message: 'please Complete your KYC before you can use this service',
+      });
+    const bank = await this.bankRepo.findOneBy({ bankId });
+    if (!bank) {
+      throw new BadRequestException({ message: 'No Bank Found' });
+    }
+    await this.bankRepo.delete({ bankId });
+  }
 
-  async testnetFaucet(testnetFaucet: TestnetFaucetDto){
+  async editBankDetails(
+    userId: string,
+    bankId: string,
+    editBankDto: AddBankDto,
+  ) {
+    const user = await this.getUserById(userId);
+    if (!user)
+      throw new UnauthorizedException({
+        message: 'You are not unthorised to use this service',
+      });
+    if (!user.isVerified)
+      throw new BadRequestException({
+        message: 'please Complete your KYC before you can use this service',
+      });
+    const bank = await this.bankRepo.findOneBy({ bankId });
+    if (!bank) {
+      throw new BadRequestException({ message: 'No Bank Found' });
+    }
+    await this.bankRepo.save({
+      ...bank,
+      ...editBankDto,
+      updatedAt: new Date(),
+      createdAt: new Date(),
+      
+    });
+  }
+
+  async testnetFaucet(testnetFaucet: TestnetFaucetDto) {
     try {
       const wallet = new ethers.Wallet(
         this.configService.get('KEY2'),
         provider,
       );
-      const bal = +ethers.utils.formatEther(await balanceOf(addresses.token, testnetFaucet.walletAddress))
-      if (bal >= 5000){
-        throw new BadRequestException({message: 'You still have enough Busd for Testing'})
+      const bal = +ethers.utils.formatEther(
+        await balanceOf(addresses.token, testnetFaucet.walletAddress),
+      );
+      if (bal >= 5000) {
+        throw new BadRequestException({
+          message: 'You still have enough Busd for Testing',
+        });
       }
       await Web3Wallet.sendTransaction(
         wallet,
@@ -572,9 +660,8 @@ export class UserService {
         addresses.token,
       );
     } catch (error) {
-      throw new UnprocessableEntityException({message: error.message})
+      throw new UnprocessableEntityException({ message: error.message });
     }
-    
   }
 
   private async hashPassword(password: string) {

@@ -17,17 +17,26 @@ export class NotificationService {
   async createNotification(userId: string, createNotificationDto: CreateNotificationDto){
     const user = await this.userService.getUserById(userId)
     const notification = this.notificationRepo.create(createNotificationDto)
-    return await this.notificationRepo.save({...notification, user})
+    return await this.notificationRepo.save({...notification, user, createdAt: new Date(), updatedAt: new Date()})
     
   }
 
-  async getUsersNotifications(userId: string){
-    return await this.notificationRepo.find({where: {user: {userId}}})
+  async getUsersNotifications(userId: string, sortCreatedBy?: any){
+    return await this.notificationRepo.find({where: {user: {userId}}, order: {createdAt: {direction: sortCreatedBy}}})
+  }
+
+  async deleteUserNotifications(userId: string, ids: string[]){
+    for (let id of ids){
+      const notic = await this.notificationRepo.findOne({where: {notificationId: id, user: {userId}}})
+      if (!notic)
+      await this.notificationRepo.delete({notificationId: id})
+    }
   }
 
   async editNotification(notificationId: string, editNotificationDto: any){
     const notification = await this.notificationRepo.findOneBy({notificationId})
     if (!notification) throw new BadRequestException({message: 'Something went wrong'})
-    await this.notificationRepo.save({...notification, ...editNotificationDto})
+    editNotificationDto.updatedAt = new Date()
+    await this.notificationRepo.save({...notification.updatedAt, ...editNotificationDto})
   }
 }

@@ -85,7 +85,7 @@ export class TransactionController {
   @Get('user/transactions')
   @ApiOkResponse({
     description: 'get User Transactions',
-    type: TransactionResponseDto,
+    type: [TransactionResponseDto],
   })
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @UseGuards(JwtAuthGuard)
@@ -93,14 +93,7 @@ export class TransactionController {
     const transactions = await this.orderService.getUsersTransactions(
       req.user.userId,
     );
-    return transactions
-      .sort((t1, t2) => {
-        if (new Date(t1.updatedAt) > new Date(t2.updatedAt)) {
-          return -1;
-        }
-        return 1;
-      })
-      .map((t) => new TransactionResponseDto(t));
+    return transactions.map((t) => new TransactionResponseDto(t));
   }
 
   // xendbridge endpoints

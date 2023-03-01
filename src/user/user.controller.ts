@@ -14,6 +14,7 @@ import {
   ParseUUIDPipe,
   Query,
   UnauthorizedException,
+  Delete,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -65,6 +66,7 @@ import { PropertyService } from 'src/property/property.service';
 import { WaitListService } from 'src/user/services/waitlist.service';
 import { NotificationService } from 'src/notification/notification.service';
 import {
+  DeleteNotifcationDto,
   EditNotificationDto,
   NotificationResponseDto,
 } from 'src/notification/notificationDto';
@@ -111,7 +113,6 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('profile')
   async getProfile(@Request() req) {
-    let myAssets = [];
     const user = await this.userService.getUserById(
       req.user.userId,
       true,
@@ -130,31 +131,8 @@ export class UserController {
       );
     }
     if (user.wallet) delete user.wallet;
-    // if (user.myAssets && user.myAssets.length > 0) {
-    //   if (walletAddress) {
-    //     const assets = await this.propertyService.getPropertiesByTokenIds(
-    //       user.myAssets,
-    //     );
-    //     for (let a of assets) {
-    //       try {
-    //         const data = await getAssetMetadata(a.tokenId);
-    //         myAssets.push({ ...a, metadata: data });
-    //       } catch (error) {
-    //         myAssets.push({
-    //           ...a,
-    //           metadata: {
-    //             name: 'Nil',
-    //             symbol: 'Nil',
-    //             totalSupply: 0,
-    //             vestingPeriod: 0,
-    //             costToDollar: 0,
-    //           },
-    //         });
-    //       }
-    //     }
-    //   }
-    // }
-    return new UserResponseDto(user, walletAddress, uri, myAssets);
+    
+    return new UserResponseDto(user, walletAddress, uri);
   }
 
   @ApiOkResponse({
@@ -285,7 +263,7 @@ export class UserController {
     }
     const address = user.wallet ? user.wallet.walletAddress : '';
     if (user.wallet) delete user.wallet
-    return new UserResponseDto(user, address, '', [])
+    return new UserResponseDto(user, address, '')
   }
 
   @ApiBearerAuth()
@@ -414,15 +392,10 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('/notification/get')
   async getUserNotifications(@Request() req: any) {
-    const notifications = await this.notificationService.getUsersNotifications(
+    return await this.notificationService.getUsersNotifications(
       req.user.userId,
     );
-    return notifications.sort((n1, n2) => {
-      if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-        return -1;
-      }
-      return 1;
-    });
+    
   }
 
   @ApiBearerAuth()
@@ -441,15 +414,30 @@ export class UserController {
     for (let id of editNotificationDto.ids) {
       await this.notificationService.editNotification(id, { isSeen: true });
     }
-    const notifications = await this.notificationService.getUsersNotifications(
+    return await this.notificationService.getUsersNotifications(
       req.user.userId,
     );
-    return notifications.sort((n1, n2) => {
-      if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-        return -1;
-      }
-      return 1;
-    });
+  }
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Delete Notification', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Delete('notification/delete/:id')
+  async deleteNotification(@Request() req: any, @Param('id', ParseUUIDPipe) id: string) {
+    await this.notificationService.deleteUserNotifications(req.user.userIs, [id])
+    return new MessageResponseDto('Success', `Notification Deleted`);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Delete Notifications', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Delete('notification/delete')
+  async deleteNotifications(@Request() req: any, @Body() deleteNoticationsDto: DeleteNotifcationDto) {
+    await this.notificationService.deleteUserNotifications(req.user.userIs, deleteNoticationsDto.ids)
+    return new MessageResponseDto('Success', `Notifications Deleted`);
   }
 
   @ApiBearerAuth()
@@ -470,13 +458,30 @@ export class UserController {
     const msg = new MessageResponseDto('Success', `Transaction Successful`);
     return {
       message: msg,
-      notifications: notifications.sort((n1, n2) => {
-        if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-          return -1;
-        }
-        return 1;
-      }),
+      notifications: notifications
     };
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Edit Bank details', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Put('bank/edit-bank/:bankId')
+  async editUserBank(@Body() addBankDto: AddBankDto, @Request() req: any, @Param('bankId', ParseUUIDPipe) bankId: string) {
+    await this.userService.editBankDetails(req.user.userId, bankId, addBankDto);
+    return new MessageResponseDto('Success', `Bank Edited Successfully`);
+  }
+
+  @ApiBearerAuth()
+  @ApiOkResponse({ description: 'Delete Bank', type: MessageResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Not authorised' })
+  @ApiBadRequestResponse({ description: 'Something went wrong' })
+  @UseGuards(JwtAuthGuard)
+  @Delete('bank/delete-bank/:bankId')
+  async deleteUserBank(@Request() req: any, @Param('bankId', ParseUUIDPipe) bankId: string) {
+    await this.userService.deleteBank(req.user.userId, bankId);
+    return new MessageResponseDto('Success', `Bank Deleted`);
   }
 
   @ApiBearerAuth()
@@ -571,12 +576,7 @@ export class UserController {
     const msg = new MessageResponseDto('Success', `Transaction Successful`);
     return {
       message: msg,
-      notifications: notifications.sort((n1, n2) => {
-        if (new Date(n1.updatedAt) > new Date(n2.updatedAt)) {
-          return -1;
-        }
-        return 1;
-      }),
+      notifications: notifications
     };
   }
 
@@ -620,12 +620,12 @@ export class UserController {
       if (u.secret) delete u.secret;
 
       // delete u.password
-      return new UserResponseDto(u, walletAddress, '', []);
+      return new UserResponseDto(u, walletAddress, '');
     });
   }
   @ApiBearerAuth()
   @ApiOkResponse({
-    description: 'Gets user notifications',
+    description: 'Admin Get User',
     type: UserResponseDto,
   })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
@@ -641,7 +641,7 @@ export class UserController {
         message: 'you are not authorised to use this service',
       });
     const user = await this.userService.getUserById(userId, true, true)
-    return new UserResponseDto(user, user.wallet ? user.wallet.walletAddress : '', '', [])
+    return new UserResponseDto(user, user.wallet ? user.wallet.walletAddress : '', '',)
   }
 
   @ApiBearerAuth()

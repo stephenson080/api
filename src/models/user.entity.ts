@@ -30,7 +30,7 @@ import { Wallet } from './wallet.entity';
     @Column({ type: 'enum', default: Roles.USER, enum: Roles })
     role: Roles
 
-    @Column({ type: 'timestamp without time zone', default: new Date() })
+    @Column({ type: 'timestamp without time zone' })
     createdAt: Date;
 
     @Column({ type: 'boolean', default: true })
@@ -51,7 +51,7 @@ import { Wallet } from './wallet.entity';
     @Column({ nullable: true, default: false, type: Boolean})
     faEnabled: boolean
 
-    @Column({ type: 'timestamp without time zone', default: new Date() })
+    @Column({ type: 'timestamp without time zone' })
     updatedAt: Date;
 
     @OneToMany(() => Property, (property) => property.user)
