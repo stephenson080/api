@@ -27,6 +27,9 @@ import { User } from './user.entity';
     tokenPrice: number;
 
     @Column({ nullable: true })
+    assetOnChainAddress: string;
+
+    @Column({ nullable: true })
     tokenId: number;
 
     @Column({ nullable: true })

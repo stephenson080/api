@@ -57,6 +57,9 @@ export class PropertyResponseDto {
     @ApiProperty({type: Number})
     tokenPrice: number
 
+    @ApiProperty({type: String})
+    assetOnChainAddress: string
+
     @ApiProperty({type: Number})
     tokenId: number
 
