@@ -134,10 +134,16 @@ export class PropertyController {
     const mappedProperties: PropertyResponseDto[] = [];
     const properties = await this.propertyService.getProperties(isListed);
     for (let property of properties) {
-      let metadata = {};
-      if (property.tokenId >= 0 && property.isListed) {
-        metadata = await getAssetMetadata(property.tokenId);
-      }
+      let metadata = {
+        name: 'Blockplot Asset',
+        symbol: 'BPL',
+        vestingPeriod: 0,
+        totalSupply: 1000,
+        costToDollar: 10,
+        assetId: 1,
+        assetIssuer: 'dshdsiudsuudsids',
+        initialSalePeriod: 0,
+      };
       const p = new PropertyResponseDto(property, metadata);
       mappedProperties.push(p);
     }
@@ -150,10 +156,23 @@ export class PropertyController {
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @Get('get-propertyByAssetId/:assetId')
   async getPropertybyAssetId(@Param('assetId') assetId: number) {
-    const property = await this.propertyService.getPerperty(undefined, assetId, undefined)
-    if (!property) return undefined
-    const metadata = await getAssetMetadata(property.tokenId);
-    return new PropertyResponseDto(property, metadata)
+    const property = await this.propertyService.getPerperty(
+      undefined,
+      assetId,
+      undefined,
+    );
+    if (!property) return undefined;
+    const metadata = {
+      name: 'Blockplot Asset',
+      symbol: 'BPL',
+      vestingPeriod: 0,
+      totalSupply: 1000,
+      costToDollar: 10,
+      assetId: 1,
+      assetIssuer: 'dshdsiudsuudsids',
+      initialSalePeriod: 0,
+    };
+    return new PropertyResponseDto(property, metadata);
   }
 
   @ApiBearerAuth()
@@ -175,10 +194,16 @@ export class PropertyController {
     );
     const mappedProperties: PropertyResponseDto[] = [];
     for (let property of properties) {
-      let metadata = {};
-      if (property.tokenId >= 0 && property.isListed) {
-        metadata = await getAssetMetadata(property.tokenId);
-      }
+      let metadata = {
+        name: 'Blockplot Asset',
+        symbol: 'BPL',
+        vestingPeriod: 0,
+        totalSupply: 1000,
+        costToDollar: 10,
+        assetId: 1,
+        assetIssuer: 'dshdsiudsuudsids',
+        initialSalePeriod: 0,
+      };;
       const p = new PropertyResponseDto(property, metadata);
       mappedProperties.push(p);
     }
@@ -203,10 +228,16 @@ export class PropertyController {
     );
     const mappedProperties: PropertyResponseDto[] = [];
     for (let property of properties) {
-      let metadata = {};
-      if (property.tokenId >= 0 && property.isListed) {
-        metadata = await getAssetMetadata(property.tokenId);
-      }
+      let metadata = {
+        name: 'Blockplot Asset',
+        symbol: 'BPL',
+        vestingPeriod: 0,
+        totalSupply: 1000,
+        costToDollar: 10,
+        assetId: 1,
+        assetIssuer: 'dshdsiudsuudsids',
+        initialSalePeriod: 0,
+      };
       const p = new PropertyResponseDto(property, metadata);
       mappedProperties.push(p);
     }
@@ -233,10 +264,16 @@ export class PropertyController {
     const properties = await this.propertyService.getAllProperties(isListed);
     const mappedProperties: PropertyResponseDto[] = [];
     for (let property of properties) {
-      let metadata = {};
-      if (property.tokenId >= 0 && property.isListed) {
-        metadata = await getAssetMetadata(property.tokenId);
-      }
+      let metadata = {
+        name: 'Blockplot Asset',
+        symbol: 'BPL',
+        vestingPeriod: 0,
+        totalSupply: 1000,
+        costToDollar: 10,
+        assetId: 1,
+        assetIssuer: 'dshdsiudsuudsids',
+        initialSalePeriod: 0,
+      };
       const p = new PropertyResponseDto(property, metadata);
       mappedProperties.push(p);
     }
@@ -258,7 +295,8 @@ export class PropertyController {
   ) {
     if (
       req.user.username !== Roles.ADMIN &&
-      req.user.username !== Roles.SUPER_ADMIN && req.user.username !== Roles.AGENT
+      req.user.username !== Roles.SUPER_ADMIN &&
+      req.user.username !== Roles.AGENT
     )
       throw new UnauthorizedException({
         message: 'you are not authorised to use this service',
@@ -268,10 +306,16 @@ export class PropertyController {
       undefined,
       propertyId,
     );
-    let metadata = {};
-    if (property.tokenId >= 0 && property.isListed) {
-      metadata = await getAssetMetadata(property.tokenId);
-    }
+    let metadata = {
+      name: 'Blockplot Asset',
+      symbol: 'BPL',
+      vestingPeriod: 0,
+      totalSupply: 1000,
+      costToDollar: 10,
+      assetId: 1,
+      assetIssuer: 'dshdsiudsuudsids',
+      initialSalePeriod: 0,
+    };
     return new PropertyResponseDto(property, metadata);
   }
 
@@ -282,19 +326,22 @@ export class PropertyController {
   @ApiBadRequestResponse({ description: 'Something went wrong' })
   @ApiUnauthorizedResponse({ description: 'Not authorised' })
   @Get('get-property/:propertyId')
-  async getProperty(
-    @Param('propertyId', ParseUUIDPipe) propertyId: string,
-  ) {
-    
+  async getProperty(@Param('propertyId', ParseUUIDPipe) propertyId: string) {
     const property = await this.propertyService.getPerperty(
       undefined,
       undefined,
       propertyId,
     );
-    let metadata = {};
-    if (property.tokenId >= 0 && property.isListed) {
-      metadata = await getAssetMetadata(property.tokenId);
-    }
+    let metadata = {
+      name: 'Blockplot Asset',
+      symbol: 'BPL',
+      vestingPeriod: 0,
+      totalSupply: 1000,
+      costToDollar: 10,
+      assetId: 1,
+      assetIssuer: 'dshdsiudsuudsids',
+      initialSalePeriod: 0,
+    };
     return new PropertyResponseDto(property, metadata);
   }
 
